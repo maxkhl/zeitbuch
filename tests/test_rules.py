@@ -16,9 +16,10 @@ def project(id, summary, ext=None, bookable=None, parent=None):
                  {"Type": "Abrechnungsprojekt", "Ext-Projekt": ext, "Bebuchbar": bookable})
 
 
-def position(id, summary, parent, ext=None, coord=None):
+def position(id, summary, parent, ext=None, coord=None, bookable="ja"):
     return Issue(id, summary, id.split("-")[0], parent,
-                 {"Type": "Abrechnungsposition", "Ext-Position": ext, "Abstimmung": coord})
+                 {"Type": "Abrechnungsposition", "Ext-Position": ext, "Abstimmung": coord,
+                  "Bebuchbar": bookable})
 
 
 def ticket(id, summary, parent=None, type="Aufgabe"):
@@ -145,6 +146,47 @@ def test_verschachtelte_position_naechste_gewinnt():
     issues["CON-31"] = ticket("CON-31", "Detail", "CON-30")
     (row,) = run([wi("CON-31", 15)], issues).rows
     assert row.target == "CON-30"
+    assert row.ext_key == "S-2026-MUSTER-001 | 1.1"  # eigene Ext-Position
+
+
+def test_verschachtelte_position_eigene_ext_position_pflicht():
+    issues = issues_beispiel()
+    issues["CON-30"] = position("CON-30", "1.1 Unterposition", "CON-2")
+    (reason,) = reasons([wi("CON-30", 15)], issues)
+    assert "CON-30 hat keine Ext-Position" in reason
+
+
+def test_position_nicht_bebuchbar_kein_ausweichen():
+    issues = issues_beispiel()
+    issues["CON-30"] = position("CON-30", "1.1 Unterposition", "CON-2", ext="S | 1.1", bookable=None)
+    issues["CON-31"] = ticket("CON-31", "Detail", "CON-30")
+    # CON-2 darüber wäre bebuchbar – trotzdem nicht zuordenbar
+    (reason,) = reasons([wi("CON-31", 15)], issues)
+    assert reason.startswith("Abrechnungsposition CON-30 ist nicht bebuchbar")
+
+
+def test_sammelposition_nicht_bebuchbar_unterposition_schon():
+    issues = issues_beispiel()
+    issues["CON-3"].fields["Bebuchbar"] = "nein"
+    issues["CON-30"] = position("CON-30", "2.1 Rollenmodell", "CON-3", ext="S | 2.1")
+    r = run([wi("CON-3", 15), wi("CON-30", 15)], issues)
+    assert [row.target for row in r.rows] == ["CON-30"]
+    assert "CON-3 ist nicht bebuchbar" in r.problems[0].reason
+
+
+@pytest.mark.parametrize("bookable", ["nein", None, "Nein"])
+def test_position_bebuchbar_leer_ist_nein(bookable):
+    issues = issues_beispiel()
+    issues["CON-2"].fields["Bebuchbar"] = bookable
+    (reason,) = reasons([wi("CON-10", 15)], issues)
+    assert "CON-2 ist nicht bebuchbar" in reason
+
+
+def test_bebuchbares_projekt_hilft_position_nicht():
+    issues = issues_beispiel()
+    issues["CON-1"].fields["Bebuchbar"] = "ja"
+    issues["CON-2"].fields["Bebuchbar"] = "nein"
+    assert reasons([wi("CON-10", 15)], issues) != []
 
 
 def test_zyklus_in_parent_kette_haengt_nicht():
@@ -173,11 +215,43 @@ def test_unbekannter_arbeitstyp():
     assert reasons([wi("CON-10", 15, type="Development")]) == ["Unbekannter Arbeitstyp „Development“"]
 
 
-def test_besprechung_ohne_abstimmungsposition():
+def test_besprechung_ohne_abstimmungsposition_wie_umsetzung():
     issues = issues_beispiel()
     issues["CON-4"].fields["Abstimmung"] = None
+    r = run([wi("CON-10", 15, "Besprechung"), wi("CON-12", 15, "Besprechung", text="Workshop")], issues)
+    assert r.problems == []
+    assert [(row.target, row.description) for row in r.rows] == [
+        ("CON-2", "Filter Replikation"), ("CON-3", "Workshop")]  # kein „Besprechung …“-Präfix
+
+
+def test_besprechung_ohne_abstimmungsposition_am_projekt_nicht_bebuchbar():
+    issues = issues_beispiel()
+    issues["CON-4"].fields["Abstimmung"] = None
+    (reason,) = reasons([wi("CON-1", 15, "Besprechung")], issues)
+    assert "Projektebene" in reason and "nicht bebuchbar" in reason
+
+
+def test_abstimmungsposition_in_beliebiger_tiefe():
+    issues = issues_beispiel()
+    issues["CON-4"].fields["Abstimmung"] = None
+    issues["CON-40"] = position("CON-40", "2.9 Abstimmung Rollen", "CON-3", ext="S | 2.9", coord="ja")
+    (row,) = run([wi("CON-10", 15, "Besprechung")], issues).rows
+    assert row.target == "CON-40"
+    assert row.description == "Besprechung Filter Replikation"
+
+
+def test_abstimmungsposition_nicht_bebuchbar():
+    issues = issues_beispiel()
+    issues["CON-4"].fields["Bebuchbar"] = None
     (reason,) = reasons([wi("CON-10", 15, "Besprechung")], issues)
-    assert "keine Abstimmungsposition" in reason
+    assert reason.startswith("Besprechung, aber Abstimmungsposition CON-4 ist nicht bebuchbar")
+
+
+def test_abstimmungsposition_anderes_projekt_zaehlt_nicht():
+    issues = issues_beispiel()
+    issues["CON-22"] = position("CON-22", "Abstimmung Support", "CON-20", coord="ja")
+    r = run([wi("CON-10", 15, "Besprechung"), wi("CON-21", 15, "Besprechung")], issues)
+    assert [row.target for row in r.rows] == ["CON-4", "CON-22"]
 
 
 def test_besprechung_mehrere_abstimmungspositionen():

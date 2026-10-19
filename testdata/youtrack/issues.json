@@ -95,7 +95,10 @@
    {
     "name": "Bebuchbar",
     "$type": "SingleEnumIssueCustomField",
-    "value": null
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
    },
    {
     "name": "Ext-Position",
@@ -151,12 +154,130 @@
    {
     "name": "Bebuchbar",
     "$type": "SingleEnumIssueCustomField",
-    "value": null
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
    },
    {
     "name": "Ext-Position",
     "$type": "SimpleIssueCustomField",
     "value": "S-2026-MUSTER-001 | 2"
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-7",
+  "summary": "2.1 Rollenmodell",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-3",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-001 | 2.1"
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-8",
+  "summary": "3. Schulung",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-1",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-001 | 3"
    },
    {
     "name": "Abstimmung",
@@ -207,7 +328,10 @@
    {
     "name": "Bebuchbar",
     "$type": "SingleEnumIssueCustomField",
-    "value": null
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
    },
    {
     "name": "Ext-Position",
@@ -347,7 +471,7 @@
   "parent": {
    "issues": [
     {
-     "idReadable": "CON-3",
+     "idReadable": "CON-7",
      "$type": "Issue"
     }
    ],
@@ -649,7 +773,10 @@
    {
     "name": "Bebuchbar",
     "$type": "SingleEnumIssueCustomField",
-    "value": null
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
    },
    {
     "name": "Ext-Position",
@@ -705,7 +832,10 @@
    {
     "name": "Bebuchbar",
     "$type": "SingleEnumIssueCustomField",
-    "value": null
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
    },
    {
     "name": "Ext-Position",

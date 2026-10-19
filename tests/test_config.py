@@ -51,6 +51,15 @@ def test_ungueltige_werte(kwargs, msg):
         Config(**kwargs).validate()
 
 
+def test_dolibarr_user_id(monkeypatch):
+    monkeypatch.setenv("ZEITBUCH_DOLIBARR_USER_ID", "")
+    assert Config.from_env().dolibarr_user_id == 0
+    monkeypatch.setenv("ZEITBUCH_DOLIBARR_USER_ID", "7")
+    assert Config.from_env().dolibarr_user_id == 7
+    with pytest.raises(ValueError, match="ZEITBUCH_DOLIBARR_USER_ID"):
+        Config(dolibarr_user_id=-1).validate()
+
+
 def test_ganze_zahl(monkeypatch):
     monkeypatch.setenv("ZEITBUCH_PORT", "abc")
     with pytest.raises(ValueError, match="ganze Zahl"):

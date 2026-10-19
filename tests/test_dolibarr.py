@@ -117,6 +117,30 @@ def test_zeit_anlegen_ermittelt_id_per_vergleich(doli, server):
     assert entry == {"id": first, "task_id": 7, "seconds": 4500, "note": "Mapping", "invoiced": False}
 
 
+def test_zeit_anlegen_auf_anderen_benutzer(doli, server):
+    doli.add_time(7, "2026-09-01", 900, "x", user_id=5)
+    assert server.calls[1][2]["user_id"] == 5
+    tid = max(server.times)
+    doli.update_time(7, tid, "2026-09-01", 1800, "y", user_id=5)
+    assert server.calls[-1][2]["user_id"] == 5
+
+
+def test_benutzer_lesen(doli, server):
+    def handler(method, url, params=None, json=None, timeout=None):
+        if url.endswith("/users/5"):
+            return FakeResponse(200, {"id": "5", "login": "m.muster"})
+        if url.endswith("/users/6"):
+            return FakeResponse(404, {"error": {"code": 404, "message": "User not found"}})
+        return FakeResponse(403, {"error": {"code": 403, "message": "Not allowed"}})
+
+    server.request = handler
+    assert doli.user(5) == {"id": 5, "login": "m.muster"}
+    assert doli.user(6) is None
+    with pytest.raises(BackendError) as e:
+        doli.user(7)
+    assert e.value.status == 403
+
+
 def test_zeit_anlegen_id_nicht_eindeutig(doli, server):
     server.extra_on_add = 1
     with pytest.raises(BackendError, match="nicht eindeutig"):

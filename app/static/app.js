@@ -417,7 +417,7 @@ function renderDolibarr(el) {
   html += `<div class="actions">
     <button class="btn primary" type="button" data-action="apply" ${p.pending ? "" : "disabled"}>Nach Dolibarr übertragen</button>
     <button class="btn" type="button" data-action="preview">Vorschau neu laden</button>
-    <span class="muted">${c.create_tasks} Aufgabe(n) neu, ${c.rename_tasks} Umbenennung(en), ${c.create} Buchung(en) neu,
+    <span class="muted">${p.booking_user.id ? `Buchung auf ${esc(p.booking_user.login || `Benutzer ${p.booking_user.id}`)} · ` : "Buchung auf den API-Benutzer · "}${c.create_tasks} Aufgabe(n) neu, ${c.rename_tasks} Umbenennung(en), ${c.create} Buchung(en) neu,
       ${c.update} geändert, ${c.unchanged} unverändert, ${c.locked + c.locked_diff} fakturiert</span>
   </div>`;
 
@@ -498,7 +498,8 @@ function renderSettings(el) {
   const c = state.check;
   if (c) {
     const sys = (name, label) => c[name].ok
-      ? `<li>${label}: <span class="tag ok">verbunden</span> als ${esc(c[name].user)}</li>`
+      ? `<li>${label}: <span class="tag ok">verbunden</span> als ${esc(c[name].user)}${
+        c[name].booking_user ? `, Zeiten werden gebucht auf <strong>${esc(c[name].booking_user)}</strong>` : ""}</li>`
       : `<li>${label}: <span class="tag bad">Fehler</span> ${esc(c[name].error)}</li>`;
     html += `<ul>${sys("youtrack", "YouTrack")}${sys("dolibarr", "Dolibarr")}</ul>`;
     html += c.config.length

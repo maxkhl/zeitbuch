@@ -75,8 +75,32 @@ und `/api/admin/projects/{id}/timeTrackingSettings?fields=enabled,workItemTypes(
 4. **Datum:** zeitbuch sendet `YYYY-MM-DD 12:00:00` (GMT). Die Mittagszeit hält
    den Tag in jeder europäischen Zeitzone stabil. In Dolibarr erscheint die
    Buchung deshalb mit Startzeit 12:00 bzw. 13:00/14:00 Ortszeit.
-5. **Benutzer:** Gebucht wird mit `user_id` 0, also auf den API-Benutzer. Das
-   Konzept sieht keine Auswahl eines anderen Dolibarr-Benutzers vor. Falls beim
-   Fakturieren der Stundensatz des Benutzers (`thm`) eine Rolle spielt, muss er
-   beim API-Benutzer gepflegt sein (offener Vorschlag: eigene Variable für die
-   Benutzer-ID).
+5. **Benutzer:** siehe nächster Abschnitt.
+
+## Dolibarr 23.0.2: Buchung auf einen anderen Benutzer
+
+Nachgeprüft für `ZEITBUCH_DOLIBARR_USER_ID`.
+
+- **`addtimespent` nimmt einen abweichenden Benutzer an.** `user_id` wird
+  ohne weitere Prüfung als `fk_user` der Buchung übernommen; `0` oder leer =
+  API-Benutzer. Verlangt werden nur das Recht **Projekte: anlegen/ändern**
+  (`projet->creer`) und Zugriff auf das Projekt der Aufgabe
+  (`_checkAccessToResource('project', …)`, d. h. Recht „alle Projekte“ oder
+  API-Benutzer als Kontakt im Projekt). Ein Recht „Zeiten anderer Benutzer
+  erfassen“ wird über die API **nicht** geprüft.
+- **Stundensatz:** Beim Anlegen übernimmt `Task::addTimeSpent` den `thm` des
+  gebuchten Benutzers (`SELECT thm FROM llx_user WHERE rowid = fk_user`), nicht
+  den des API-Benutzers.
+- **Keine Existenzprüfung:** `llx_element_time.fk_user` hat keinen
+  Fremdschlüssel. Eine nicht existierende ID wird stillschweigend gespeichert.
+  Deshalb prüft zeitbuch die ID vorher und sperrt das Übertragen, wenn es sie
+  nicht gibt.
+- **Prüfen, ob die ID existiert:** `GET /api/index.php/users/{id}` (404 = gibt es
+  nicht). Dafür braucht der API-Benutzer das Recht **Benutzer: lesen**
+  (`user->user->lire`) oder Admin; ohne das Recht kommt 403, außer für die
+  eigene ID. Fehlt das Recht, meldet zeitbuch „nicht prüfbar“ und bucht trotzdem.
+- **Ändern:** `PUT /tasks/{id}/timespent/{tid}` setzt `fk_user` nur, wenn
+  `user_id` > 0 ist; mit 0 bleibt der Benutzer der Buchung unverändert. zeitbuch
+  sendet die konfigurierte ID (bzw. 0 ohne Konfiguration). Der `thm` wird beim
+  Ändern nur neu bestimmt, wenn er leer ist oder `TIMESPENT_ALWAYS_UPDATE_THM`
+  gesetzt ist.

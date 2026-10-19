@@ -12,7 +12,7 @@ from .checks import check_youtrack_config
 from .config import Config
 from .db import Database
 from .month import load_month, month_view, parse_month
-from .sync import StalePlan, SyncError, apply_plan, build_plan
+from .sync import StalePlan, SyncError, apply_plan, build_plan, check_booking_user
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +65,14 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
             result["config"] = check_youtrack_config(
                 youtrack, [p["short_name"] for p in mapping], cfg.yt)
         if result["dolibarr"]["ok"]:
+            try:
+                login, msg, _ = check_booking_user(dolibarr, cfg.dolibarr_user_id)
+                result["dolibarr"]["booking_user"] = login or (
+                    result["dolibarr"]["user"] if not cfg.dolibarr_user_id else None)
+                if msg:
+                    result["config"].append(msg)
+            except BackendError as e:
+                result["config"].append(f"Dolibarr-Benutzer {cfg.dolibarr_user_id}: {e}")
             for p in mapping:
                 if p["dolibarr_project_id"] is None:
                     continue
@@ -173,7 +181,7 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
     # ------------------------------------------------------------ Dolibarr
     def plan_for(month):
         result, issues = load_month(youtrack, db, cfg.yt, month)
-        return build_plan(month, result, issues, db, dolibarr, cfg.yt, youtrack)
+        return build_plan(month, result, issues, db, dolibarr, cfg.yt, youtrack, cfg.dolibarr_user_id)
 
     @app.get("/api/dolibarr/preview")
     def dolibarr_preview():
@@ -185,7 +193,7 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
         month = month_arg(data.get("month"))
         plan = plan_for(month)
         try:
-            done = apply_plan(plan, db, dolibarr, data.get("fingerprint"))
+            done = apply_plan(plan, db, dolibarr, data.get("fingerprint"), cfg.dolibarr_user_id)
         except StalePlan as e:
             return jsonify({"error": str(e), "plan": plan}), 409
         except SyncError as e:

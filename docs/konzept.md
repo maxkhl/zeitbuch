@@ -1,6 +1,8 @@
 # Konzept: Zeiterfassung über YouTrack → Zeitdaten für externe Systeme & Dolibarr
 
-Stand: 20.10.2026 · Status: Entwurf zur Umsetzung mit Claude Code · Name der App/des Repos: `zeitbuch`
+Stand: 20.10.2026 · Status: umgesetzt · Name der App/des Repos: `zeitbuch`
+
+Änderungen nach der ersten Umsetzung (20.10.2026): Bebuchbar an Projekt und Position, verschachtelte Positionen, Ziel ist immer der nächste Abrechnungsknoten, Abstimmung optional (3.1, 3.3, 5.1–5.3, 7.1); Dolibarr-Benutzer für Zeitbuchungen (7.2, 8, 12.3).
 
 > Dieses Dokument liegt in einem **öffentlichen** Repository. Alle Beispiele (Kunden, Projektnummern, Positionen) sind fiktiv. Echte Kunden- und Projektdaten gehören nicht ins Repo – weder in Doku noch in Testdaten.
 
@@ -40,16 +42,25 @@ CON-001  [Type: Abrechnungsprojekt]  Webshop-Integration
          Bebuchbar  = nein                        ← Zeit nur auf Positionen
 ├─ CON-002 [Type: Abrechnungsposition] 1. Kundenstammdaten
 │    Ext-Position = "S-2026-MUSTER-001 | 1"
+│    Bebuchbar    = ja
 │    └─ CON-010  Filter Replikation               ← normales Ticket, hier wird Zeit geloggt
 │         └─ (beliebig tiefe Subtasks)
 ├─ CON-003 [Type: Abrechnungsposition] 2. Partnerrollen
 │    Ext-Position = "S-2026-MUSTER-001 | 2"
+│    Bebuchbar    = nein                          ← Sammelposition, Zeit nur auf Unterpositionen
+│    ├─ CON-005 [Type: Abrechnungsposition] 2.1 Rollenmodell
+│    │    Ext-Position = "S-2026-MUSTER-001 | 2.1"
+│    │    Bebuchbar    = ja
+│    └─ CON-006 [Type: Abrechnungsposition] 2.2 Berechtigungen
+│         Ext-Position = "S-2026-MUSTER-001 | 2.2"
+│         Bebuchbar    = ja
 └─ CON-004 [Type: Abrechnungsposition] 9. Koordination / Projektmanagement
      Ext-Position = "S-2026-MUSTER-001 | 9"
-     Abstimmung  = ja                             ← genau eine je Abrechnungsprojekt
+     Bebuchbar    = ja
+     Abstimmung   = ja                            ← optional, höchstens eine je Abrechnungsprojekt
 ```
 
-Beziehung = YouTrack-Standardlink „subtask of“ / „parent for“.
+Beziehung = YouTrack-Standardlink „subtask of“ / „parent for“. Abrechnungspositionen dürfen unter Abrechnungspositionen hängen (beliebige Tiefe); jede Position hat ihre eigene Ext-Position.
 
 ### 3.2 Type-Werte
 
@@ -62,9 +73,9 @@ Neue Werte im Feld **Type**: `Abrechnungsprojekt`, `Abrechnungsposition`. Bewuss
 | Feld | Typ | Sichtbar wenn | Inhalt |
 |---|---|---|---|
 | Ext-Projekt | string | Type = Abrechnungsprojekt | Projektkennung im externen System, z. B. `S-2026-MUSTER-001` – optional (leer = keine Anzeige für externe Systeme) |
-| Bebuchbar | enum (ja/nein) | Type = Abrechnungsprojekt | Ob direkt auf das Projekt gebucht werden darf (entspricht bebuchbaren/nicht bebuchbaren Hauptprojekten in externen Systemen). Leer gilt als `nein`. |
+| Bebuchbar | enum (ja/nein) | Type = Abrechnungsprojekt oder Abrechnungsposition | Ob direkt auf diesen Knoten gebucht werden darf (entspricht bebuchbaren/nicht bebuchbaren Projekten und Positionen in externen Systemen). Leer gilt als `nein`. |
 | Ext-Position | string | Type = Abrechnungsposition | Positionskennung im externen System, z. B. `S-2026-MUSTER-001 \| 9` |
-| Abstimmung | enum (ja/nein) | Type = Abrechnungsposition | `ja` markiert die Abstimmungsposition des Projekts |
+| Abstimmung | enum (ja/nein) | Type = Abrechnungsposition | `ja` markiert die Abstimmungsposition des Projekts (optional, siehe 5.1) |
 
 Bedingte Felder in YouTrack hängen an einem enum-artigen Feld (hier Type); Werte in ausgeblendeten Feldern werden geleert.
 
@@ -84,46 +95,49 @@ Die Standardtypen (Development/Testing/Documentation) im Projekt deaktivieren, d
 
 - **Umsetzung** an dem Ticket loggen, an dem gearbeitet wurde.
 - **Besprechung zu einem Thema** ebenfalls am Themen-Ticket loggen (Typ Besprechung) – keine eigenen Besprechungs-Tickets.
-- **Allgemeine Besprechung** (Jour Fix) direkt am Abrechnungsprojekt loggen.
+- **Allgemeine Besprechung** (Jour Fix) direkt am Abrechnungsprojekt loggen. Hat das Projekt eine Abstimmungsposition, landet sie dort; sonst muss das Projekt bebuchbar sein.
 - Kommentar des Work Items = Beschreibungstext der Zeitzeile. Leer ist erlaubt (Fallback siehe 5.3).
 
 ## 5. Zuordnungs- und Berechnungsregeln
 
-### 5.1 Auflösung der Position
+### 5.1 Auflösung des Ziels
 
-Für jedes Work Item:
+**Abrechnungsknoten** sind Abrechnungsprojekte und Abrechnungspositionen. Für jedes Work Item:
 
 1. Vom Ticket aus die Parent-Kette nach oben laufen (das Ticket selbst eingeschlossen).
-2. Erstes Ticket mit Type = Abrechnungsposition → **Fachposition** (kann fehlen).
+2. Erster Abrechnungsknoten (Position oder Projekt) → **nächster Knoten**.
 3. Erstes Ticket mit Type = Abrechnungsprojekt → **Abrechnungsprojekt** (muss existieren).
-4. Ziel nach Arbeitstyp:
+4. **Abstimmungspositionen** des Abrechnungsprojekts = alle Positionen mit Abstimmung = ja, in beliebiger Tiefe unter dem Projekt (ohne ein anderes Abrechnungsprojekt dazwischen).
+5. Ziel nach Arbeitstyp:
 
 | Arbeitstyp | Ziel |
 |---|---|
-| Besprechung | Abstimmungsposition des Abrechnungsprojekts (Kind mit Abstimmung = ja) – unabhängig davon, wo geloggt wurde. Hat das Projekt gar keine Positionen: Projektebene (nur wenn Bebuchbar = ja). |
-| Umsetzung | Fachposition aus Schritt 2; gibt es keine, die **Projektebene** (direkt am Abrechnungsprojekt) – nur wenn Bebuchbar = ja |
+| Umsetzung | der nächste Knoten aus Schritt 2 |
+| Besprechung | keine Abstimmungsposition → wie Umsetzung (nächster Knoten); genau eine → diese Abstimmungsposition, unabhängig davon, wo geloggt wurde; mehr als eine → nicht zuordenbar |
 | Nicht abrechenbar | keins – wird nur informativ angezeigt |
 
-Normale Tickets (weder Abrechnungsprojekt noch -position) sind nie selbst ein Ziel; ihre Zeit wandert immer zur nächsten Abrechnungsposition bzw. zum Abrechnungsprojekt darüber. Gebucht werden kann also auf zwei Ebenen: **Abrechnungsprojekt** und **Abrechnungsposition**.
+6. Das Ziel muss **bebuchbar** sein (Bebuchbar = ja). Ist es das nicht, ist das Work Item nicht zuordenbar. Es wird **nie** stillschweigend auf den nächsthöheren Knoten ausgewichen.
+
+Normale Tickets (weder Abrechnungsprojekt noch -position) sind nie selbst ein Ziel; ihre Zeit wandert immer zum nächsten Abrechnungsknoten darüber. Gebucht werden kann also auf **Abrechnungsprojekte und Abrechnungspositionen jeder Ebene**, sofern sie bebuchbar sind.
 
 ### 5.2 Fehlerfälle – nie stillschweigend zuordnen
 
 Folgende Work Items erscheinen in der UI unter **„Nicht zuordenbar“** und gehen in keine Ausgabe, bis sie in YouTrack korrigiert sind:
 
 - Kein Abrechnungsprojekt in der Parent-Kette.
-- Besprechung, aber das Projekt hat Positionen und keine oder mehr als eine Abstimmungsposition.
-- Arbeitstyp leer. *(Bewusst kein Default auf „Umsetzung“: Eine vergessene Typangabe bei einer Besprechung würde sonst die Fachposition belasten.)*
-- Abrechnungsposition ohne Ext-Position, obwohl das Projekt ein Ext-Projekt hat.
-- Ziel wäre die Projektebene, aber das Abrechnungsprojekt ist nicht bebuchbar (Bebuchbar = nein oder leer).
+- Arbeitstyp leer oder unbekannt. *(Bewusst kein Default auf „Umsetzung“: Eine vergessene Typangabe bei einer Besprechung würde sonst die falsche Position belasten.)*
+- Ziel ist nicht bebuchbar (Bebuchbar = nein oder leer) – Projekt, Position oder Abstimmungsposition.
+- Besprechung, aber das Abrechnungsprojekt hat mehr als eine Abstimmungsposition.
+- Ziel ist eine Abrechnungsposition ohne Ext-Position, obwohl das Projekt ein Ext-Projekt hat.
 
-Ist ein Projekt bebuchbar, sind Buchungen auf Projektebene regulär und werden ohne Warnung übernommen.
+Ein Abrechnungsprojekt ohne Abstimmungsposition ist **kein** Fehler: Besprechungen werden dann wie Umsetzung gebucht.
 
 ### 5.3 Aggregation zu Zeitzeilen
 
 - Gruppierung: **Datum × Ziel** (Ziel = Abrechnungsposition oder Abrechnungsprojekt).
 - Externe Kennung: bei einer Position deren Ext-Position, auf Projektebene das Ext-Projekt. Zeilen von Abrechnungsprojekten ohne Ext-Projekt erscheinen nicht in der Anzeige für externe Systeme, gehen aber nach Dolibarr.
 - Dauer: Summe der Rohminuten, dann gerundet (5.4).
-- Beschreibung: Kommentare der Work Items, dedupliziert, mit „, “ verbunden. Fallback je Work Item: Ticket-Titel. Bei Besprechungen auf der Abstimmungsposition wird das Thema mitgegeben, z. B. „Besprechung Partnerrollen“ (Titel des Tickets, an dem geloggt wurde, sofern es nicht das Abrechnungsprojekt selbst ist).
+- Beschreibung: Kommentare der Work Items, dedupliziert, mit „, “ verbunden. Fallback je Work Item: Ticket-Titel. Wird eine Besprechung auf die Abstimmungsposition umgeleitet, wird das Thema mitgegeben, z. B. „Besprechung Partnerrollen“ (Titel des Tickets, an dem geloggt wurde, sofern es weder das Abrechnungsprojekt noch die Abstimmungsposition selbst ist; ein Kommentar wird mit „: “ angehängt).
 
 ### 5.4 Rundung
 
@@ -165,9 +179,12 @@ Dolibarr-Projekt (Auftraggeber)            ← Mapping in der App
 ├─ Aufgabe  CON-001 Webshop-Integration    ← je Abrechnungsprojekt
 │  ├─ Unteraufgabe  CON-002 1. Kundenstammdaten   ← je Abrechnungsposition
 │  ├─ Unteraufgabe  CON-003 2. Partnerrollen
+│  │  └─ Unteraufgabe  CON-005 2.1 Rollenmodell   ← verschachtelte Position
 │  └─ Unteraufgabe  CON-004 9. Koordination / PM
 └─ Aufgabe  CON-020 Support-Projekt        ← Abrechnungsprojekt ohne Positionen
 ```
+
+Übergeordnete Aufgabe einer Position ist die Aufgabe des nächsten Abrechnungsknotens darüber. Angelegt werden die Aufgaben, die als Ziel einer Buchung gebraucht werden, samt ihren übergeordneten Knoten.
 
 - Bezeichnung = YouTrack-ID + Titel. Die Zuordnung YouTrack-Ticket → Dolibarr-Aufgaben-ID wird in der App gespeichert, nicht über den Namen gesucht.
 - Gespiegelt werden nur Abrechnungsprojekte und -positionen. Normale Tickets werden nie als Aufgabe angelegt; ihre Zeit wandert nach 5.1 nach oben.
@@ -179,22 +196,21 @@ Dolibarr-Projekt (Auftraggeber)            ← Mapping in der App
 
 - Eine Zeitbuchung **je Tag und Ziel**, auf der gespiegelten Aufgabe (Projektebene → Aufgabe des Abrechnungsprojekts, Position → Unteraufgabe). Dauer und Notiz = die gerundete Zeile aus 5.3/5.4.
 - Gebucht wird als **abrechenbar** und **nicht fakturiert**.
+- Gebucht wird auf den Dolibarr-Benutzer `ZEITBUCH_DOLIBARR_USER_ID` (sein Stundensatz gilt); der API-Benutzer ist nur technischer Zugang. Leer = API-Benutzer. Existiert die ID nicht, meldet das die Konfigurationsprüfung und es wird nicht gebucht.
 - Übertragung nur per Button mit Vorschau (Datum, Dauer, Zielaufgabe), nie automatisch.
 - **Idempotenz:** Die App speichert je übertragenem Eintrag die Dolibarr-ID. Erneutes Übertragen erzeugt keine Duplikate, sondern aktualisiert Dauer/Notiz eigener, nicht fakturierter Einträge.
 - **Grundsatz: Die App löscht in Dolibarr nie etwas** – keine Aufgaben, keine Zeitbuchungen. Fällt eine Zeile weg (Work Item in YouTrack gelöscht oder umgehängt), zeigt die App den verwaisten Dolibarr-Eintrag als Warnung mit Link; gelöscht wird von Hand.
 - Die App fasst nur Aufgaben und Zeitbuchungen an, die sie selbst angelegt hat (über die gespeicherten IDs). Von Hand angelegte Aufgaben und Zeiten im selben Dolibarr-Projekt bleiben unberührt.
 - **Sperre über das Fakturiert-Kennzeichen:** Vor jeder Übertragung liest die App den Status der betroffenen Dolibarr-Zeitbuchungen. Bereits fakturierte Einträge werden nie geändert oder gelöscht; Abweichungen zu YouTrack werden dort nur als Warnung angezeigt. Eine eigene Monatssperre in der App entfällt damit.
-- **Zu verifizieren** gegen die Dolibarr-23-API:
-  - Anlegen von Aufgaben mit übergeordneter Aufgabe (Unteraufgaben) und Ändern der Bezeichnung.
-  - Anlegen/Ändern/Lesen von Zeitbuchungen auf Aufgaben (vermutlich Tasks-API „addtimespent“) und wie dort „abrechenbar“ und „fakturiert“ abgebildet sind.
+- **Verifiziert** gegen die Dolibarr-23-API, Ergebnis in [api-verifikation.md](api-verifikation.md): Aufgaben mit übergeordneter Aufgabe, Umbenennen, Zeitbuchungen anlegen/ändern/lesen, abrechenbar/fakturiert, abweichender Benutzer.
 - Fakturieren: Dolibarr fasst beim Erzeugen der Rechnung auf Wunsch alle Zeitdatensätze zu einer Position zusammen (im Einsatz, funktioniert). Die Aufgabenstruktur ändert daran nichts.
 
 ## 8. Schnittstellen und Zugänge
 
 | System | Zugriff | Zweck |
 |---|---|---|
-| YouTrack REST-API | Permanent Token eines eigenen Benutzers mit **nur Leserechten** | Work Items je Zeitraum lesen (vermutlich `/api/workItems` mit Datumsfilter – zu verifizieren), Tickets inkl. Parent-Kette, Type und Custom Fields, Projektfelder und Arbeitstypen für die Konfigurationsprüfung (8.1) |
-| Dolibarr REST-API | API-Key eines eigenen Benutzers, Rechte nur auf Projekte/Aufgaben/Zeiten | Aufgaben anlegen/umbenennen, Zeitbuchungen anlegen/ändern/lesen |
+| YouTrack REST-API | Permanent Token eines eigenen Benutzers mit **nur Leserechten** | Work Items je Zeitraum lesen (`/api/workItems` mit Datumsfilter – verifiziert), Tickets inkl. Parent-Kette, Type und Custom Fields, Projektfelder und Arbeitstypen für die Konfigurationsprüfung (8.1) |
+| Dolibarr REST-API | API-Key eines eigenen Benutzers, Rechte auf Projekte/Aufgaben/Zeiten, zusätzlich „Benutzer lesen“ für die Prüfung von `ZEITBUCH_DOLIBARR_USER_ID` | Aufgaben anlegen/umbenennen, Zeitbuchungen anlegen/ändern/lesen |
 | Externe Systeme | keiner | – |
 
 Secrets ausschließlich per Umgebungsvariablen im Dockge-Stack – nie im Image, nie im Repo. Im Repo nur `.env.example` mit Platzhaltern.
@@ -234,8 +250,8 @@ UI, Doku und Fehlermeldungen auf Deutsch. Kein Schreibzugriff auf YouTrack im MV
 
 1. Time Tracking im Auftraggeber-Projekt aktivieren (falls noch nicht), Arbeitstypen gemäß 3.4.
 2. Type-Werte `Abrechnungsprojekt`, `Abrechnungsposition` anlegen (Bundle-Hinweis 3.2).
-3. Felder Ext-Projekt, Bebuchbar, Ext-Position, Abstimmung anlegen, bedingt auf Type.
-4. Je Kundenprojekt ein Abrechnungsprojekt mit seinen Positionen als Subtasks anlegen; genau eine Position mit Abstimmung = ja.
+3. Felder Ext-Projekt, Bebuchbar, Ext-Position, Abstimmung anlegen, bedingt auf Type (Bebuchbar bei beiden Type-Werten sichtbar).
+4. Je Kundenprojekt ein Abrechnungsprojekt mit seinen Positionen (ggf. verschachtelt) als Subtasks anlegen. Bebuchbar an jedem Knoten setzen, auf den gebucht wird – leer gilt als nein. Optional genau eine Position mit Abstimmung = ja.
 5. Bestehende Arbeitstickets unter die passenden Positionen hängen.
 6. Falls ein Assistenz-Benutzer (z. B. „Claude“) Work Items für dich anlegt (siehe 11, Erfassung per Assistent): diesem Benutzer im Projekt das Recht zum Anlegen von Work Items geben und ihn ggf. in `ZEITBUCH_YT_AUTHORS` aufnehmen.
 
@@ -245,7 +261,9 @@ UI, Doku und Fehlermeldungen auf Deutsch. Kein Schreibzugriff auf YouTrack im MV
 |---|---|
 | Rechnung | Entsteht in Dolibarr aus den Zeitbuchungen der Aufgaben; Dolibarr fasst beim Fakturieren alle Zeiten zu einer Position zusammen. |
 | Dolibarr-Mapping | Nur YouTrack-Projekt → Dolibarr-Projekt; die Aufgabenstruktur legt die App an. |
-| Projektebene | Buchungen direkt aufs Abrechnungsprojekt steuert das Feld Bebuchbar. |
+| Bebuchbar | Steuert an Abrechnungsprojekt und -position, ob direkt dorthin gebucht werden darf. Kein Ausweichen auf den nächsthöheren Knoten. |
+| Abstimmung | Optional. Höchstens eine Abstimmungsposition je Abrechnungsprojekt; ohne sie werden Besprechungen wie Umsetzung gebucht. |
+| Dolibarr-Benutzer | Zeiten werden auf `ZEITBUCH_DOLIBARR_USER_ID` gebucht; der API-Benutzer ist nur technischer Zugang. |
 | Positionen bei Direktkunden | Möglich, aber optional. Ohne Ext-Projekt keine Anzeige für externe Systeme, nur Dolibarr-Buchungen. |
 | Übergang | Fließend, kein Stichtag. Ab sofort Zeiten in YouTrack statt direkt in Dolibarr erfassen. Bisherige Aufgaben und Zeiten in Dolibarr bleiben unangetastet; die App legt ihre Struktur daneben an. **Nichts wird gelöscht.** Hinweis: Dieselbe Zeit nicht zusätzlich von Hand in Dolibarr buchen – die App sieht manuelle Einträge nicht. |
 | Erfassung per Assistent | Gewünscht: Ein Assistent (Claude über die YouTrack-Anbindung) legt Work Items aus Stichpunkten an. Das passiert **außerhalb von zeitbuch** direkt in YouTrack; zeitbuch selbst schreibt weiterhin nicht nach YouTrack und behandelt diese Work Items wie alle anderen. |
@@ -281,7 +299,7 @@ Vorlage für Aufbau, Container und CI ist **vmdash** (github.com/maxkhl/vmdash) 
 
 - Basis `debian:trixie-slim`, unprivilegierter Benutzer, `EXPOSE 8000`, `VOLUME /data`, `HEALTHCHECK` auf `/healthz`.
 - Build-Arg `VERSION` (Short-SHA) → Env-Variable, in der UI sichtbar.
-- Konfiguration nur über Env-Variablen mit App-Präfix, z. B. `ZEITBUCH_PORT`, `ZEITBUCH_DB`, `ZEITBUCH_YOUTRACK_URL`, `ZEITBUCH_YOUTRACK_TOKEN`, `ZEITBUCH_DOLIBARR_URL`, `ZEITBUCH_DOLIBARR_KEY`, dazu die Feldkonfiguration aus 8.1. Alle Variablen mit Default und Bedeutung in README und `.env.example`.
+- Konfiguration nur über Env-Variablen mit App-Präfix, z. B. `ZEITBUCH_PORT`, `ZEITBUCH_DB`, `ZEITBUCH_YOUTRACK_URL`, `ZEITBUCH_YOUTRACK_TOKEN`, `ZEITBUCH_DOLIBARR_URL`, `ZEITBUCH_DOLIBARR_KEY`, `ZEITBUCH_DOLIBARR_USER_ID`, dazu die Feldkonfiguration aus 8.1. Alle Variablen mit Default und Bedeutung in README und `.env.example`.
 
 ### 12.4 GitHub Actions
 

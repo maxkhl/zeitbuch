@@ -36,13 +36,34 @@ def _warn(text, url=None, level="warn"):
     return {"text": text, "url": url, "level": level}
 
 
-def build_plan(month, result, issues, db, doli, yt, youtrack):
+def check_booking_user(doli, user_id):
+    """→ (Login oder None, Meldung oder None, blockiert). user_id 0 = API-Benutzer."""
+    if not user_id:
+        return None, None, False
+    try:
+        user = doli.user(user_id)
+    except BackendError as e:
+        if e.status == 403:
+            return None, (f"Dolibarr-Benutzer {user_id} (ZEITBUCH_DOLIBARR_USER_ID) nicht prüfbar: "
+                          "dem API-Benutzer fehlt das Recht „Benutzer lesen“"), False
+        raise
+    if user is None:
+        return None, (f"Dolibarr-Benutzer {user_id} (ZEITBUCH_DOLIBARR_USER_ID) existiert nicht – "
+                      "es wird nichts gebucht"), True
+    return user["login"], None, False
+
+
+def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0):
     """Vorschau für einen Monat. Liest Dolibarr, schreibt nichts."""
     res = Resolver(issues, yt)
     mapping = {p["short_name"]: p["dolibarr_project_id"] for p in db.projects()}
     task_map = db.tasks()
     warnings = []
     forget_tasks, forget_times = set(), set()
+
+    booking_user, user_msg, blocked = check_booking_user(doli, user_id)
+    if user_msg:
+        warnings.append(_warn(user_msg, level="error" if blocked else "warn"))
 
     # --- gemappte Dolibarr-Projekte prüfen
     doli_projects = {}
@@ -101,11 +122,22 @@ def build_plan(month, result, issues, db, doli, yt, youtrack):
                         "dolibarr_project": doli_projects[short]["ref"],
                         "kind": POSITION if parent else PROJECT})
 
+    def node_chain(target_id):
+        """Abrechnungsknoten vom Ziel bis zum Abrechnungsprojekt (verschachtelte Positionen)."""
+        nodes = []
+        for issue in res.chain(target_id):
+            kind = res.kind(issue)
+            if kind is not None:
+                nodes.append(issue)
+            if kind == PROJECT:
+                break
+        return nodes
+
     for row in rows:
-        project = issues[row.billing_project]
-        need(project, None, row.yt_project)
-        if row.target_kind == POSITION:
-            need(issues[row.target], project, row.yt_project)
+        nodes = node_chain(row.target)
+        # Von oben nach unten: die übergeordnete Aufgabe steht immer vor ihren Kindern
+        for i in range(len(nodes) - 1, -1, -1):
+            need(nodes[i], nodes[i + 1] if i + 1 < len(nodes) else None, row.yt_project)
 
     # Umbenennungen und Strukturwarnungen für alle gespeicherten Aufgaben
     renames = []
@@ -127,11 +159,11 @@ def build_plan(month, result, issues, db, doli, yt, youtrack):
                 f"{yt_issue} hat in YouTrack die Ebene gewechselt (Projekt ↔ Position) – "
                 f"Dolibarr-Aufgabe „{m['label']}“ wird nicht verschoben", url))
         elif kind == POSITION:
-            parent = res.billing_project_of(issue.parent) if issue.parent else None
+            parent = res.nearest_node(issue.parent) if issue.parent else None
             if parent is None or parent.id != m["parent_yt_issue"]:
                 warnings.append(_warn(
                     f"{yt_issue} wurde in YouTrack umgehängt "
-                    f"({m['parent_yt_issue']} → {parent.id if parent else 'ohne Abrechnungsprojekt'}) – "
+                    f"({m['parent_yt_issue']} → {parent.id if parent else 'ohne Abrechnungsknoten'}) – "
                     f"Dolibarr-Aufgabe „{m['label']}“ wird nicht verschoben", url))
         if issue.project in doli_projects and doli_projects[issue.project]["id"] != m["dolibarr_project_id"]:
             warnings.append(_warn(
@@ -229,8 +261,11 @@ def build_plan(month, result, issues, db, doli, yt, youtrack):
             "orphans": len(orphans),
         },
     }
+    plan["booking_user"] = {"id": user_id or None, "login": booking_user}
+    plan["blocked"] = blocked
     plan["fingerprint"] = fingerprint(plan)
-    plan["pending"] = bool(creates or renames or plan["counts"]["create"] or plan["counts"]["update"])
+    plan["pending"] = not blocked and bool(
+        creates or renames or plan["counts"]["create"] or plan["counts"]["update"])
     return plan
 
 
@@ -249,12 +284,14 @@ def fingerprint(plan):
     return hashlib.sha256(json.dumps(actions, sort_keys=True).encode()).hexdigest()[:16]
 
 
-def apply_plan(plan, db, doli, expected_fingerprint):
+def apply_plan(plan, db, doli, expected_fingerprint, user_id=0):
     """Führt eine frisch berechnete Vorschau aus. Jeder Schritt wird sofort gespeichert,
     damit ein Abbruch beim nächsten Übertragen sauber weiterläuft."""
     if plan["fingerprint"] != expected_fingerprint:
         raise StalePlan("Die Vorschau ist veraltet – YouTrack oder Dolibarr haben sich seitdem "
                         "geändert. Bitte Vorschau neu laden und erneut prüfen.")
+    if plan["blocked"]:
+        raise SyncError("Übertragung gesperrt – siehe Warnungen (ZEITBUCH_DOLIBARR_USER_ID)")
     if not _apply_lock.acquire(blocking=False):
         raise SyncError("Eine Übertragung läuft bereits")
     done = {"tasks_created": 0, "tasks_renamed": 0, "times_created": 0, "times_updated": 0,
@@ -266,8 +303,8 @@ def apply_plan(plan, db, doli, expected_fingerprint):
             db.forget_time(key)
 
         task_ids = {k: v["task_id"] for k, v in db.tasks().items()}
-        # Projekte vor Positionen, damit die übergeordnete Aufgabe schon existiert
-        for c in sorted(plan["tasks_create"], key=lambda c: c["kind"] != PROJECT):
+        # Reihenfolge der Vorschau: übergeordnete Aufgaben stehen vor ihren Kindern
+        for c in plan["tasks_create"]:
             parent_id = task_ids.get(c["parent_yt_issue"]) if c["parent_yt_issue"] else None
             if c["parent_yt_issue"] and not parent_id:
                 raise SyncError(f"Übergeordnete Aufgabe zu {c['yt_issue']} fehlt")
@@ -285,7 +322,7 @@ def apply_plan(plan, db, doli, expected_fingerprint):
         for t in plan["times"]:
             if t["action"] == "create":
                 task_id = t["task_id"] or task_ids[t["target"]]
-                time_id = doli.add_time(task_id, t["date"], t["seconds"], t["note"])
+                time_id = doli.add_time(task_id, t["date"], t["seconds"], t["note"], user_id)
                 db.save_time(t["key"], t["date"], t["target"], task_id, time_id, t["seconds"], t["note"])
                 done["times_created"] += 1
             elif t["action"] == "update":
@@ -296,7 +333,7 @@ def apply_plan(plan, db, doli, expected_fingerprint):
                                            + ("fakturiert" if entry else "gelöscht")
                                            + " – nicht geändert")
                     continue
-                doli.update_time(t["task_id"], t["time_id"], t["date"], t["seconds"], t["note"])
+                doli.update_time(t["task_id"], t["time_id"], t["date"], t["seconds"], t["note"], user_id)
                 db.save_time(t["key"], t["date"], t["target"], t["task_id"], t["time_id"],
                              t["seconds"], t["note"])
                 done["times_updated"] += 1

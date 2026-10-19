@@ -49,7 +49,8 @@ def test_monat_zeilen_und_formate(client, mapped):
 def test_monat_uebersicht_und_summen(client, mapped):
     data = get_month(client)
     con1 = next(p for p in data["overview"] if p["billing_project"] == "CON-1")
-    assert [t["target"] for t in con1["targets"]] == ["CON-2", "CON-3", "CON-4"]
+    # CON-7 ist eine verschachtelte Position unter CON-3
+    assert [t["target"] for t in con1["targets"]] == ["CON-2", "CON-3", "CON-7", "CON-4"]
     assert con1["minutes"] == sum(t["minutes"] for t in con1["targets"])
     assert data["totals"]["minutes"] == sum(r["minutes"] for r in data["rows"])
     assert data["totals"]["problems"] == len(data["problems"]) == 5

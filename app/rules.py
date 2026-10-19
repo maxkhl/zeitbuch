@@ -88,9 +88,9 @@ class Resolver:
     def is_yes(self, issue, field_name):
         return issue.fields.get(field_name) == self.yt.value_yes
 
-    def bookable(self, project):
-        # Leer gilt als nein (3.3)
-        return self.is_yes(project, self.yt.field_bookable)
+    def bookable(self, node):
+        # An Projekt und Position; leer gilt als nein (3.3)
+        return self.is_yes(node, self.yt.field_bookable)
 
     def ext_project(self, project):
         return self.value(project, self.yt.field_ext_project)
@@ -115,7 +115,8 @@ class Resolver:
         return None
 
     def positions_of(self, project_id):
-        """Alle Abrechnungspositionen, deren nächstes Abrechnungsprojekt darüber project_id ist."""
+        """Alle Abrechnungspositionen (beliebige Tiefe), deren nächstes Abrechnungsprojekt
+        darüber project_id ist."""
         if self._positions is None:
             self._positions = {}
             for issue in self.issues.values():
@@ -132,60 +133,58 @@ class Resolver:
         return [p for p in self.positions_of(project_id)
                 if self.is_yes(p, self.yt.field_coordination)]
 
+    def nearest_node(self, issue_id):
+        """Erster Abrechnungsknoten (Position oder Projekt) in der Parent-Kette."""
+        for issue in self.chain(issue_id):
+            if self.kind(issue) is not None:
+                return issue
+        return None
+
     # -------------------------------------------------------- Ziel (5.1)
     def target(self, wi):
-        """Liefert (Ziel-Ticket, Abrechnungsprojekt) oder wirft _Unassignable."""
+        """Liefert (Ziel, Abrechnungsprojekt, umgeleitet) oder wirft _Unassignable."""
         yt = self.yt
-        project = None
-        position = None
-        for issue in self.chain(wi.issue):
-            kind = self.kind(issue)
-            if kind == POSITION and position is None:
-                position = issue
-            elif kind == PROJECT:
-                project = issue
-                break
+        node = self.nearest_node(wi.issue)
+        project = self.billing_project_of(wi.issue)
         if project is None:
             raise _Unassignable("Kein Abrechnungsprojekt in der Parent-Kette")
 
+        redirected = False
         if wi.work_type == yt.work_meeting:
-            if self.positions_of(project.id):
-                coord = self.coordination_positions(project.id)
-                if not coord:
-                    raise _Unassignable(
-                        f"Besprechung, aber Abrechnungsprojekt {project.id} hat keine "
-                        f"Abstimmungsposition ({yt.field_coordination} = {yt.value_yes})")
-                if len(coord) > 1:
-                    raise _Unassignable(
-                        f"Besprechung, aber Abrechnungsprojekt {project.id} hat mehrere "
-                        f"Abstimmungspositionen ({', '.join(p.id for p in coord)})")
-                target = coord[0]
-            else:
-                target = project
-        else:  # Umsetzung
-            target = position or project
-
-        if target is project:
-            if not self.bookable(project):
+            coord = self.coordination_positions(project.id)
+            if len(coord) > 1:
                 raise _Unassignable(
-                    f"Ziel wäre die Projektebene, aber Abrechnungsprojekt {project.id} "
-                    f"ist nicht bebuchbar ({yt.field_bookable} ≠ {yt.value_yes})")
-        elif self.ext_project(project) and not self.ext_position(target):
-            raise _Unassignable(
-                f"Abrechnungsposition {target.id} hat keine {yt.field_ext_position}, "
-                f"Abrechnungsprojekt {project.id} aber eine {yt.field_ext_project}")
-        return target, project
+                    f"Besprechung, aber Abrechnungsprojekt {project.id} hat mehrere "
+                    f"Abstimmungspositionen ({', '.join(p.id for p in coord)})")
+            if coord:
+                node = coord[0]
+                redirected = True
+            # keine Abstimmungsposition: wie Umsetzung
 
-    def describe(self, wi, target, project):
+        # Nie auf den nächsthöheren Knoten ausweichen
+        if not self.bookable(node):
+            hint = f"({yt.field_bookable} ≠ {yt.value_yes})"
+            if node is project:
+                what = f"Ziel ist die Projektebene, aber Abrechnungsprojekt {project.id}"
+            elif redirected:
+                what = f"Besprechung, aber Abstimmungsposition {node.id}"
+            else:
+                what = f"Abrechnungsposition {node.id}"
+            raise _Unassignable(f"{what} ist nicht bebuchbar {hint}")
+        if node is not project and self.ext_project(project) and not self.ext_position(node):
+            raise _Unassignable(
+                f"Abrechnungsposition {node.id} hat keine {yt.field_ext_position}, "
+                f"Abrechnungsprojekt {project.id} aber eine {yt.field_ext_project}")
+        return node, project, redirected
+
+    def describe(self, wi, target, project, redirected):
         """Beschreibungsteil eines Work Items (5.3)."""
         logged = self.issues.get(wi.issue)
         text = (wi.text or "").strip()
-        base = text or (logged.summary if logged else wi.issue)
-        if (wi.work_type == self.yt.work_meeting and target is not project
-                and logged is not None and logged.id not in (project.id, target.id)):
+        if redirected and logged is not None and logged.id not in (project.id, target.id):
             topic = f"{self.yt.work_meeting} {logged.summary}"
             return f"{topic}: {text}" if text else topic
-        return base
+        return text or (logged.summary if logged else wi.issue)
 
 
 def evaluate(work_items, issues, yt):
@@ -215,7 +214,7 @@ def evaluate(work_items, issues, yt):
             problems.append(Problem(wi, summary, f"Unbekannter Arbeitstyp „{wi.work_type}“"))
             continue
         try:
-            target, project = res.target(wi)
+            target, project, redirected = res.target(wi)
         except _Unassignable as e:
             problems.append(Problem(wi, summary, str(e)))
             continue
@@ -238,7 +237,7 @@ def evaluate(work_items, issues, yt):
             )
         row.raw_minutes += wi.minutes
         row.work_items.append(wi.id)
-        part = res.describe(wi, target, project)
+        part = res.describe(wi, target, project, redirected)
         row_parts = parts.setdefault(key, [])
         if part and part not in row_parts:
             row_parts.append(part)

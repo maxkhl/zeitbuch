@@ -75,6 +75,7 @@ ENV_ATTRS = {
     "youtrack_token": "ZEITBUCH_YOUTRACK_TOKEN",
     "dolibarr_url": "ZEITBUCH_DOLIBARR_URL",
     "dolibarr_key": "ZEITBUCH_DOLIBARR_KEY",
+    "dolibarr_user_id": "ZEITBUCH_DOLIBARR_USER_ID",
     "http_timeout": "ZEITBUCH_HTTP_TIMEOUT",
 }
 
@@ -90,6 +91,8 @@ class Config:
     youtrack_token: str = ""
     dolibarr_url: str = ""
     dolibarr_key: str = ""
+    # Dolibarr-Benutzer, auf den gebucht wird; 0 = API-Benutzer
+    dolibarr_user_id: int = 0
     http_timeout: int = 20
     yt: FieldConfig = field(default_factory=FieldConfig)
 
@@ -104,6 +107,7 @@ class Config:
             youtrack_token=_env("ZEITBUCH_YOUTRACK_TOKEN", ""),
             dolibarr_url=_env("ZEITBUCH_DOLIBARR_URL", "").rstrip("/"),
             dolibarr_key=_env("ZEITBUCH_DOLIBARR_KEY", ""),
+            dolibarr_user_id=_env_int("ZEITBUCH_DOLIBARR_USER_ID", 0),
             http_timeout=_env_int("ZEITBUCH_HTTP_TIMEOUT", 20),
             yt=FieldConfig.from_env(),
         )
@@ -115,6 +119,8 @@ class Config:
             raise ValueError("ZEITBUCH_BACKEND muss auto, real oder mock sein")
         if not 1 <= self.port <= 65535:
             raise ValueError("ZEITBUCH_PORT muss zwischen 1 und 65535 liegen")
+        if self.dolibarr_user_id < 0:
+            raise ValueError("ZEITBUCH_DOLIBARR_USER_ID muss eine positive ID sein (leer = API-Benutzer)")
         if not 1 <= self.http_timeout <= 300:
             raise ValueError("ZEITBUCH_HTTP_TIMEOUT muss zwischen 1 und 300 Sekunden liegen")
         for name, url in (("ZEITBUCH_YOUTRACK_URL", self.youtrack_url),

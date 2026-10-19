@@ -95,6 +95,7 @@ in der Datenbank gespeichert.
 | `ZEITBUCH_YOUTRACK_TOKEN` | – | Permanent Token eines eigenen Benutzers mit **nur Leserechten** |
 | `ZEITBUCH_DOLIBARR_URL` | – | Basis-URL von Dolibarr ohne `/api` |
 | `ZEITBUCH_DOLIBARR_KEY` | – | API-Key eines eigenen Benutzers (Rechte siehe unten) |
+| `ZEITBUCH_DOLIBARR_USER_ID` | leer | ID des Dolibarr-Benutzers, auf den die Zeiten gebucht werden (sein Stundensatz gilt). Leer = API-Benutzer. |
 
 Im Mock-Modus zeigt die Oberfläche ein rotes Banner „MOCK-MODUS“. Der Mock
 liest fiktive Beispieldaten aus `testdata/youtrack/` und hält Dolibarr nur im
@@ -151,9 +152,12 @@ Einmalig, von Hand (Konzept Abschnitt 10):
    anlegen. Nutzt das Feld ein projektübergreifendes Bundle, erscheinen sie auch
    in anderen Projekten.
 3. Felder `Ext-Projekt` (string), `Bebuchbar` (enum ja/nein), `Ext-Position`
-   (string) und `Abstimmung` (enum ja/nein) anlegen, bedingt sichtbar je Type.
+   (string) und `Abstimmung` (enum ja/nein) anlegen, bedingt sichtbar je Type;
+   `Bebuchbar` bei Abrechnungsprojekt **und** Abrechnungsposition.
 4. Je Kundenprojekt ein Abrechnungsprojekt mit seinen Positionen als Subtasks;
-   genau eine Position mit `Abstimmung = ja`.
+   Positionen dürfen verschachtelt sein, jede mit eigener `Ext-Position`.
+   `Bebuchbar = ja` an jedem Knoten setzen, auf den gebucht wird – **leer gilt
+   als nein**. Optional genau eine Position mit `Abstimmung = ja`.
 5. Bestehende Arbeitstickets unter die passenden Positionen hängen.
 6. Legt ein Assistenz-Benutzer Work Items an, ihm das Recht dazu geben und ihn
    ggf. in `ZEITBUCH_YT_AUTHORS` aufnehmen.
@@ -164,11 +168,17 @@ Projekteinstellungen (Felder, Arbeitstypen) der eingerichteten Projekte.
 ## Einrichtung in Dolibarr
 
 - Version 23, Module **Projekte** mit Aufgaben und **API** aktiv.
-- Eigener Benutzer für zeitbuch mit API-Key und Rechten nur auf Projekte,
-  Aufgaben und Zeiten (lesen und anlegen/ändern; **kein** Löschen nötig).
-- In den Dolibarr-Projekten der Auftraggeber muss „Zeit abrechnen“ aktiv sein.
-- Zeitbuchungen werden auf den API-Benutzer gebucht. Spielt beim Fakturieren
-  sein Stundensatz eine Rolle, diesen beim API-Benutzer pflegen.
+- In jedem Dolibarr-Projekt eines Auftraggebers **„Zeit abrechnen“ aktivieren**
+  (Projektkarte → Ändern). zeitbuch stellt das nicht selbst ein.
+- Eigener technischer Benutzer für zeitbuch mit API-Key. Rechte:
+  - Projekte: lesen und anlegen/ändern (**kein** Löschen nötig), Zugriff auf die
+    betroffenen Projekte (Recht „alle Projekte“ oder als Kontakt eingetragen),
+  - Benutzer: lesen – nur damit die Konfigurationsprüfung
+    `ZEITBUCH_DOLIBARR_USER_ID` prüfen kann.
+- `ZEITBUCH_DOLIBARR_USER_ID` auf den Benutzer setzen, auf den die Zeiten
+  gebucht werden sollen (ID in Dolibarr unter Benutzer & Gruppen, `id=` in der
+  URL). Dessen Stundensatz übernimmt Dolibarr in die Buchung. Leer = API-Benutzer.
+  Existiert die ID nicht, sperrt zeitbuch das Übertragen.
 
 Details zu den genutzten Endpunkten und ihren Eigenheiten in
 [docs/api-verifikation.md](docs/api-verifikation.md).
@@ -199,14 +209,15 @@ Oben den Monat wählen. „Neu laden“ liest YouTrack erneut.
 
 ## Regeln in Kürze
 
-- Ziel einer **Umsetzung** ist die nächste Abrechnungsposition in der
-  Parent-Kette, sonst die Projektebene (nur bei `Bebuchbar = ja`).
-- Ziel einer **Besprechung** ist immer die Abstimmungsposition des
-  Abrechnungsprojekts; hat es keine Positionen, die Projektebene.
+- Ziel einer **Umsetzung** ist der nächste Abrechnungsknoten (Position jeder
+  Ebene oder Projekt) in der Parent-Kette. Er muss `Bebuchbar = ja` haben; es
+  wird nie auf einen höheren Knoten ausgewichen.
+- Ziel einer **Besprechung**: Hat das Abrechnungsprojekt genau eine
+  Abstimmungsposition (beliebige Tiefe), diese; hat es keine, wie Umsetzung.
 - **Nicht abrechenbar** wird nur angezeigt.
-- Nie stillschweigend: Fehlender Arbeitstyp, kein Abrechnungsprojekt, keine
-  oder mehrere Abstimmungspositionen, fehlende Ext-Position bei gesetztem
-  Ext-Projekt und nicht bebuchbare Projektebene landen unter „Nicht zuordenbar“.
+- Nie stillschweigend: Fehlender Arbeitstyp, kein Abrechnungsprojekt, nicht
+  bebuchbares Ziel, mehrere Abstimmungspositionen und fehlende Ext-Position bei
+  gesetztem Ext-Projekt landen unter „Nicht zuordenbar“.
 - Zeilen je **Datum × Ziel**, Dauer = Tagessumme, **aufwärts auf 15 Minuten**.
 - Eine Zeile = eine Dolibarr-Buchung. Fakturierte Buchungen werden nie
   geändert; verwaiste Buchungen erscheinen als Warnung mit Link und werden von

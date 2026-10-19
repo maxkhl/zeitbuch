@@ -28,6 +28,8 @@ UI, Doku und Fehlermeldungen sind auf Deutsch.
 ## Aufbau
 
 - `app/rules.py` – Zuordnung, Fehlerfälle, Aggregation, Rundung (Konzept 5).
+  Ziel ist immer der nächste Abrechnungsknoten, der bebuchbar sein muss; nie
+  auf höhere Knoten ausweichen. Abstimmung optional (0 = keine Umleitung).
   Reine Funktionen, keine I/O. Hier liegt die Fachlogik; Änderungen nur mit Test.
 - `app/month.py` – Monatsauswertung für die UI, übertragen-Zustand.
 - `app/sync.py` – Dolibarr-Vorschau und -Übertragung (Konzept 7).
@@ -60,6 +62,9 @@ UI, Doku und Fehlermeldungen sind auf Deutsch.
   fakturiert überspringen.
 - Abrechenbar ist `billable` der Aufgabe; zeitbuch legt Aufgaben mit 1 an.
 - Datum wird als `JJJJ-MM-TT 12:00:00` (GMT) gesendet.
+- Gebucht wird auf `ZEITBUCH_DOLIBARR_USER_ID` (0 = API-Benutzer). Dolibarr prüft
+  die ID nicht → zeitbuch prüft per `GET /users/{id}`; unbekannt = Übertragen
+  gesperrt, 403 (Recht fehlt) = nur Warnung.
 - Übertragen berechnet die Vorschau neu und vergleicht den Fingerprint; bei
   Abweichung 409 statt etwas anderes auszuführen als angezeigt.
 

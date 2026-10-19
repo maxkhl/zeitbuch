@@ -547,5 +547,28 @@
    "$type": "Issue"
   },
   "created": 1790065440000
+ },
+ {
+  "id": "141-25",
+  "$type": "IssueWorkItem",
+  "date": 1790121600000,
+  "duration": {
+   "minutes": 60,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Schulungsunterlagen",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-8",
+   "$type": "Issue"
+  },
+  "created": 1790151900000
  }
 ]

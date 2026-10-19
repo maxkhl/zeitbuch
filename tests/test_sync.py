@@ -264,3 +264,86 @@ def test_verbindungstest_dolibarr(client, db):
     data = client.post("/api/check", json={}).get_json()
     assert data["dolibarr"]["ok"]
     assert "Dolibarr-Projekt 99 (Mapping für CON) nicht gefunden" in data["config"]
+
+
+# ------------------------------------------------------------ verschachtelte Positionen
+
+def test_verschachtelte_position_als_unteraufgabe(client, con_only, dolibarr):
+    plan = preview(client)
+    creates = {c["yt_issue"]: c for c in plan["tasks_create"]}
+    assert creates["CON-7"]["parent_yt_issue"] == "CON-3"
+    order = [c["yt_issue"] for c in plan["tasks_create"]]
+    assert order.index("CON-1") < order.index("CON-3") < order.index("CON-7")
+    apply(client, plan)
+    tasks = {t["label"]: t for t in dolibarr.tasks.values()}
+    assert tasks["CON-7 2.1 Rollenmodell"]["fk_task_parent"] == tasks["CON-3 2. Partnerrollen"]["id"]
+    # Nicht bebuchbare Position CON-8 wird nicht angelegt
+    assert "CON-8 3. Schulung" not in tasks
+
+
+def test_verschachtelte_position_umgehaengt(client, con_only, dolibarr, youtrack):
+    apply(client, preview(client))
+    raw = next(i for i in youtrack.raw_issues if i["idReadable"] == "CON-7")
+    raw["parent"]["issues"] = [{"idReadable": "CON-2"}]
+    plan = preview(client)
+    assert any("CON-7 wurde in YouTrack umgehängt (CON-3 → CON-2)" in w["text"] for w in plan["warnings"])
+
+
+# ------------------------------------------------------------ Dolibarr-Benutzer
+
+def make_client(tmp_path, youtrack, dolibarr, **cfg):
+    from app.web import create_app
+
+    from .conftest import make_config
+
+    app = create_app(make_config(tmp_path, **cfg), youtrack=youtrack, dolibarr=dolibarr)
+    app.extensions["zeitbuch"]["db"].set_project("CON", 1)
+    return app.test_client()
+
+
+def test_buchung_auf_konfigurierten_benutzer(tmp_path, youtrack, dolibarr):
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_user_id=2)
+    plan = preview(client)
+    assert plan["booking_user"] == {"id": 2, "login": "m.muster"}
+    apply(client, plan)
+    assert {t["user_id"] for t in dolibarr.times.values()} == {2}
+
+
+def test_ohne_benutzer_api_benutzer(client, con_only, dolibarr):
+    plan = preview(client)
+    assert plan["booking_user"] == {"id": None, "login": None}
+    apply(client, plan)
+    assert all(c[-1] == 0 for c in dolibarr.calls if c[0] == "add_time")
+
+
+def test_unbekannter_benutzer_sperrt_uebertragung(tmp_path, youtrack, dolibarr):
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_user_id=99)
+    plan = preview(client)
+    assert plan["blocked"] and not plan["pending"]
+    assert any("Dolibarr-Benutzer 99" in w["text"] and w["level"] == "error" for w in plan["warnings"])
+    r = apply(client, plan)
+    assert r.status_code == 409
+    assert dolibarr.calls == []
+    check = client.post("/api/check", json={}).get_json()
+    assert "Dolibarr-Benutzer 99 (ZEITBUCH_DOLIBARR_USER_ID) existiert nicht – es wird nichts gebucht" in check["config"]
+
+
+def test_benutzer_nicht_pruefbar_ohne_recht(tmp_path, youtrack, dolibarr):
+    from app.backends import BackendError
+
+    def forbidden(user_id):
+        raise BackendError("Dolibarr verweigert den Zugriff (HTTP 403)", 403)
+
+    dolibarr.user = forbidden
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_user_id=2)
+    plan = preview(client)
+    assert not plan["blocked"]
+    assert any("Recht „Benutzer lesen“" in w["text"] for w in plan["warnings"])
+    check = client.post("/api/check", json={}).get_json()
+    assert any("Recht „Benutzer lesen“" in m for m in check["config"])
+
+
+def test_verbindungstest_zeigt_buchungsbenutzer(tmp_path, youtrack, dolibarr):
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_user_id=2)
+    check = client.post("/api/check", json={}).get_json()
+    assert check["dolibarr"]["booking_user"] == "m.muster"

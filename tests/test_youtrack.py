@@ -67,11 +67,15 @@ def test_beispieldaten_decken_regeln_ab(mock):
     items, issues = mock.load(*SEP, ["CON", "XSYS"], YT)
     r = evaluate(items, issues, YT)
     targets = {row.target for row in r.rows}
-    assert {"CON-2", "CON-3", "CON-4", "CON-20", "CON-32", "XSYS-1"} <= targets
+    assert {"CON-2", "CON-3", "CON-4", "CON-7", "CON-20", "CON-32", "XSYS-1"} <= targets
     reasons = " | ".join(p.reason for p in r.problems)
     for expected in ("Kein Abrechnungsprojekt", "Arbeitstyp fehlt", "keine Ext-Position",
-                     "keine Abstimmungsposition", "nicht bebuchbar"):
+                     "Projektebene, aber Abrechnungsprojekt CON-1 ist nicht bebuchbar",
+                     "Abrechnungsposition CON-8 ist nicht bebuchbar"):
         assert expected in reasons
+    # CON-31 hat keine Abstimmungsposition: Besprechung an CON-32 bleibt dort
+    meeting = next(row for row in r.rows if row.target == "CON-32" and row.date.day == 7)
+    assert meeting.raw_minutes == 150
     assert len(r.nonbillable) == 1
 
 
