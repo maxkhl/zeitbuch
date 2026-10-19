@@ -12,7 +12,8 @@ log = logging.getLogger(__name__)
 
 TESTDATA = Path(__file__).resolve().parent.parent.parent / "testdata" / "youtrack"
 
-WORK_ITEM_FIELDS = "id,date,duration(minutes),type(name),text,author(login),issue(idReadable),created"
+WORK_ITEM_FIELDS = ("id,date,duration(minutes),type(name),text,author(login),issue(idReadable),created,"
+                    "attributes(name,value(name))")
 ISSUE_FIELDS = ("idReadable,summary,project(shortName),parent(issues(idReadable)),"
                 "customFields(name,value(name,text,login))")
 PAGE = 500
@@ -48,6 +49,8 @@ def parse_work_item(raw):
         text=raw.get("text") or "",
         author=(raw.get("author") or {}).get("login"),
         created=int(raw.get("created") or 0),
+        attributes={a["name"]: _field_value(a.get("value")) for a in raw.get("attributes") or []
+                    if a.get("name")},
     )
 
 
@@ -63,7 +66,8 @@ def parse_issue(raw):
 
 
 def parse_project_config(project_fields, time_tracking):
-    """→ {"fields": {Name: [Werte] | None}, "time_tracking": bool, "work_types": [...]}"""
+    """→ {"fields": {Name: [Werte] | None}, "time_tracking": bool, "work_types": [...],
+    "attributes": {Name: [Werte]}}"""
     fields = {}
     for pf in project_fields or []:
         name = (pf.get("field") or {}).get("name")
@@ -76,6 +80,8 @@ def parse_project_config(project_fields, time_tracking):
         "fields": fields,
         "time_tracking": bool(tt.get("enabled")),
         "work_types": [t.get("name") for t in tt.get("workItemTypes") or []],
+        "attributes": {a.get("name"): [v.get("name") for v in a.get("values") or []]
+                       for a in tt.get("attributes") or [] if a.get("name")},
     }
 
 
@@ -216,7 +222,7 @@ class YouTrack(YouTrackBase):
         fields = self._get(f"/api/admin/projects/{pid}/customFields",
                            {"fields": "field(name),bundle(values(name))", "$top": 500})
         tt = self._get(f"/api/admin/projects/{pid}/timeTrackingSettings",
-                       {"fields": "enabled,workItemTypes(name)"})
+                       {"fields": "enabled,workItemTypes(name),attributes(name,values(name))"})
         return parse_project_config(fields, tt)
 
 

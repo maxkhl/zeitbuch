@@ -118,11 +118,13 @@ gilt für alle eingerichteten YouTrack-Projekte.
 | `ZEITBUCH_YT_VALUE_YES` | `ja` | Enum-Wert für „ja“ in Bebuchbar/Abstimmung |
 | `ZEITBUCH_YT_WORK_IMPLEMENTATION` | `Umsetzung` | Arbeitstyp Umsetzung |
 | `ZEITBUCH_YT_WORK_MEETING` | `Besprechung` | Arbeitstyp Besprechung |
-| `ZEITBUCH_YT_WORK_NONBILLABLE` | `Nicht abrechenbar` | Arbeitstyp Nicht abrechenbar |
+| `ZEITBUCH_YT_ATTR_BILLABLE` | `Abrechenbar` | Work-Item-Attribut für die Abrechenbarkeit |
+| `ZEITBUCH_YT_ATTR_BILLABLE_NO` | `nein` | Attributwert für „nicht abrechenbar“; leer oder anderer Wert = abrechenbar |
 | `ZEITBUCH_YT_AUTHORS` | leer | Kommagetrennte Logins, deren Work Items zählen; leer = alle |
 
 **Konfigurationsprüfung:** Beim Start und im Verbindungstest prüft zeitbuch je
-YouTrack-Projekt, ob alle Felder, Werte und Arbeitstypen existieren, und meldet
+YouTrack-Projekt, ob alle Felder, Werte, Arbeitstypen und das Work-Item-Attribut
+samt Wert existieren, und meldet
 Lücken konkret (z. B. „Feld ‚Bebuchbar‘ fehlt in Projekt XSYS“). Die App startet
 trotzdem und zeigt die Meldungen als Banner oben an.
 
@@ -146,8 +148,9 @@ damit können fremde Seiten keine Formulare an zeitbuch schicken.
 
 Einmalig, von Hand (Konzept Abschnitt 10):
 
-1. Zeiterfassung im Auftraggeber-Projekt aktivieren, Arbeitstypen `Umsetzung`,
-   `Besprechung`, `Nicht abrechenbar`; die Standardtypen deaktivieren.
+1. Zeiterfassung im Auftraggeber-Projekt aktivieren, Arbeitstypen `Umsetzung`
+   und `Besprechung`; die Standardtypen deaktivieren. Work-Item-Attribut
+   `Abrechenbar` mit den Werten `ja` und `nein` anlegen und dem Projekt zuweisen.
 2. Im Feld **Type** die Werte `Abrechnungsprojekt` und `Abrechnungsposition`
    anlegen. Nutzt das Feld ein projektübergreifendes Bundle, erscheinen sie auch
    in anderen Projekten.
@@ -193,7 +196,8 @@ Oben den Monat wählen. „Neu laden“ liest YouTrack erneut.
 
 - **Übersicht:** Summen je Abrechnungsprojekt und Position, Ampel (rot = nicht
   zuordenbare Work Items oder Konfigurationsproblem, gelb = übertragene Zeilen
-  haben sich geändert), nicht abrechenbare Zeiten zur Information.
+  haben sich geändert), nicht abrechenbare Zeit als eigene Summe gesamt und je
+  Abrechnungsprojekt (Rohzeit, nicht gerundet) mit Einzelliste.
 - **Externe Systeme:** Zeitzeilen mit Copy-Button je Feld; Dauer als `1:45` und
   `1,75h`. Häkchen „übertragen“ setzen, sobald die Zeile im externen System
   steht. Ändert sich eine markierte Zeile später, wird sie gelb mit alt → neu
@@ -214,7 +218,8 @@ Oben den Monat wählen. „Neu laden“ liest YouTrack erneut.
   wird nie auf einen höheren Knoten ausgewichen.
 - Ziel einer **Besprechung**: Hat das Abrechnungsprojekt genau eine
   Abstimmungsposition (beliebige Tiefe), diese; hat es keine, wie Umsetzung.
-- **Nicht abrechenbar** wird nur angezeigt.
+- **Abrechenbar = nein** (Work-Item-Attribut) wird nur angezeigt – eigene
+  Summe in der Übersicht, keine Zeitzeile, keine Buchung. Leer = abrechenbar.
 - Nie stillschweigend: Fehlender Arbeitstyp, kein Abrechnungsprojekt, nicht
   bebuchbares Ziel, mehrere Abstimmungspositionen und fehlende Ext-Position bei
   gesetztem Ext-Projekt landen unter „Nicht zuordenbar“.

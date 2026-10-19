@@ -269,7 +269,7 @@ function renderOverview(el) {
     <div class="card"><div class="label">davon für externe Systeme</div><div class="value">${esc(t.external.hm)} <small>${esc(t.external.decimal)}</small></div></div>
     <div class="card ${t.problems ? "bad" : ""}"><div class="label">Nicht zuordenbar</div><div class="value">${t.problems}</div></div>
     <div class="card ${t.changed ? "warn" : ""}"><div class="label">Übertragen, aber geändert</div><div class="value">${t.changed}</div></div>
-    <div class="card"><div class="label">Nicht abrechenbar (roh)</div><div class="value">${esc(t.nonbillable.hm)}</div></div>
+    <div class="card"><div class="label">Nicht abrechenbar (roh, nicht gebucht)</div><div class="value">${esc(t.nonbillable.hm)} <small>${esc(t.nonbillable.decimal)}</small></div></div>
   </div>`;
 
   if (t.problems) {
@@ -283,28 +283,32 @@ function renderOverview(el) {
   } else {
     html += `<div class="table-wrap"><table><thead><tr>
       <th>Abrechnungsprojekt / Position</th><th>Externe Kennung</th><th class="num">Stunden</th><th class="num">Dezimal</th>
+      <th class="num">Nicht abrechenbar</th>
       </tr></thead><tbody>`;
     for (const p of d.overview) {
-      html += `<tr class="group"><td>${link(p.url, p.billing_project)} ${esc(p.label)} <span class="muted">· ${esc(p.yt_project)}</span></td>
-        <td></td><td class="num">${esc(p.hm)}</td><td class="num">${esc(p.decimal)}</td></tr>`;
+      const nb = p.nonbillable.minutes ? `${esc(p.nonbillable.hm)}` : "";
+      const title = p.billing_project ? `${link(p.url, p.billing_project)} ${esc(p.label)}` : `<em>${esc(p.label)}</em>`;
+      html += `<tr class="group"><td>${title} <span class="muted">· ${esc(p.yt_project)}</span></td>
+        <td></td><td class="num">${p.minutes ? esc(p.hm) : ""}</td><td class="num">${p.minutes ? esc(p.decimal) : ""}</td>
+        <td class="num muted">${nb}</td></tr>`;
       for (const x of p.targets) {
         const label = x.target_kind === "project" ? `<em>Projektebene</em>` : `${esc(x.target)} ${esc(x.label)}`;
         html += `<tr class="sub"><td>${label}</td><td class="mono">${esc(x.ext_key || "")}</td>
-          <td class="num">${esc(x.hm)}</td><td class="num">${esc(x.decimal)}</td></tr>`;
+          <td class="num">${esc(x.hm)}</td><td class="num">${esc(x.decimal)}</td><td></td></tr>`;
       }
     }
     html += `</tbody></table></div>`;
   }
 
   if (d.nonbillable.length) {
-    html += `<h2>Nicht abrechenbar (nur informativ)</h2><div class="table-wrap"><table><thead><tr>
-      <th>Datum</th><th>Ticket</th><th>Abrechnungsprojekt</th><th>Kommentar</th><th class="num">Dauer</th>
+    html += `<h2>Nicht abrechenbar (nur informativ, Rohzeit)</h2><div class="table-wrap"><table><thead><tr>
+      <th>Datum</th><th>Ticket</th><th>Abrechnungsprojekt</th><th>Arbeitstyp</th><th>Kommentar</th><th class="num">Dauer</th>
       </tr></thead><tbody>`;
     for (const n of d.nonbillable) {
       html += `<tr><td class="nowrap">${fmtDate(n.work_item.date)}</td>
         <td>${link(n.url, n.work_item.issue)} ${esc(n.issue_summary)}</td>
         <td>${esc(n.billing_project ? `${n.billing_project} ${n.billing_project_label}` : "–")}</td>
-        <td>${esc(n.work_item.text)}</td><td class="num">${esc(n.work_item.hm)}</td></tr>`;
+        <td>${esc(n.work_item.type || "–")}</td><td>${esc(n.work_item.text)}</td><td class="num">${esc(n.work_item.hm)}</td></tr>`;
     }
     html += `</tbody></table></div>`;
   }

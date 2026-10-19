@@ -46,10 +46,11 @@ def issues_beispiel():
 _n = 0
 
 
-def wi(issue, minutes, type="Umsetzung", text="", day=D1):
+def wi(issue, minutes, type="Umsetzung", text="", day=D1, billable=None):
     global _n
     _n += 1
-    return WorkItem(f"wi-{_n}", issue, day, minutes, type, text, "max", _n)
+    attrs = {} if billable is None else {"Abrechenbar": billable}
+    return WorkItem(f"wi-{_n}", issue, day, minutes, type, text, "max", _n, attrs)
 
 
 def run(items, issues=None):
@@ -128,10 +129,39 @@ def test_projektebene_mit_ext_projekt():
 
 
 def test_nicht_abrechenbar_nur_informativ():
-    r = run([wi("CON-10", 30, "Nicht abrechenbar"), wi("CON-99", 30, "Nicht abrechenbar")])
+    r = run([wi("CON-10", 30, billable="nein"), wi("CON-99", 30, "Besprechung", billable="nein")])
     assert r.rows == [] and r.problems == []
     assert [(n.billing_project, n.work_item.minutes) for n in r.nonbillable] == [
         ("CON-1", 30), (None, 30)]
+
+
+@pytest.mark.parametrize("billable", [None, "ja"])
+def test_abrechenbar_leer_oder_ja(billable):
+    (row,) = run([wi("CON-10", 30, billable=billable)]).rows
+    assert row.target == "CON-2"
+
+
+def test_nicht_abrechenbar_ohne_arbeitstyp_ist_kein_fehler():
+    r = run([wi("CON-10", 30, type=None, billable="nein")])
+    assert r.problems == [] and len(r.nonbillable) == 1
+
+
+def test_nicht_abrechenbar_zaehlt_nicht_zur_tagessumme():
+    (row,) = run([wi("CON-10", 10), wi("CON-10", 50, billable="nein")]).rows
+    assert row.raw_minutes == 10 and row.minutes == 15
+
+
+def test_alter_arbeitstyp_nicht_abrechenbar_ist_unbekannt():
+    assert reasons([wi("CON-10", 15, type="Nicht abrechenbar")]) == [
+        "Unbekannter Arbeitstyp „Nicht abrechenbar“"]
+
+
+def test_konfiguriertes_attribut():
+    yt = FieldConfig(attr_billable="Billable", attr_billable_no="No")
+    items = [WorkItem("1", "CON-10", D1, 20, "Umsetzung", attributes={"Billable": "No"}),
+             WorkItem("2", "CON-10", D1, 20, "Umsetzung", attributes={"Abrechenbar": "nein"})]
+    r = evaluate(items, issues_beispiel(), yt)
+    assert len(r.nonbillable) == 1 and r.rows[0].raw_minutes == 20
 
 
 def test_gruppierung_datum_mal_ziel():

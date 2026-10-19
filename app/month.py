@@ -73,7 +73,8 @@ def month_view(youtrack, db, yt, month):
 
     def work_item(wi):
         return {"id": wi.id, "issue": wi.issue, "date": wi.date.isoformat(), **duration(wi.minutes),
-                "type": wi.work_type, "text": wi.text, "author": wi.author}
+                "type": wi.work_type, "text": wi.text, "author": wi.author,
+                "attributes": wi.attributes}
 
     problems = [{"work_item": work_item(p.work_item), "issue_summary": p.issue_summary,
                  "reason": p.reason, "url": url(p.work_item.issue)} for p in result.problems]
@@ -83,21 +84,35 @@ def month_view(youtrack, db, yt, month):
                     "url": url(n.work_item.issue)} for n in result.nonbillable]
 
     overview = {}
+
+    def project_entry(billing_project, label, yt_project):
+        return overview.setdefault(billing_project, {
+            "billing_project": billing_project, "label": label, "yt_project": yt_project,
+            "url": url(billing_project) if billing_project else None,
+            "minutes": 0, "nonbillable_minutes": 0, "targets": {}})
+
     for row in result.rows:
-        proj = overview.setdefault(row.billing_project, {
-            "billing_project": row.billing_project, "label": row.billing_project_label,
-            "yt_project": row.yt_project, "url": url(row.billing_project),
-            "minutes": 0, "targets": {}})
+        proj = project_entry(row.billing_project, row.billing_project_label, row.yt_project)
         proj["minutes"] += row.minutes
         t = proj["targets"].setdefault(row.target, {
             "target": row.target, "label": row.label, "target_kind": row.target_kind,
             "ext_key": row.ext_key, "minutes": 0})
         t["minutes"] += row.minutes
+    # Nicht abrechenbar: eigene Summe je Abrechnungsprojekt (roh, nicht gerundet, nie gebucht)
+    for n in result.nonbillable:
+        if n.billing_project:
+            proj = project_entry(n.billing_project, n.billing_project_label,
+                                 issues[n.billing_project].project)
+        else:
+            proj = project_entry(None, "Ohne Abrechnungsprojekt", n.work_item.issue.split("-")[0])
+        proj["nonbillable_minutes"] += n.work_item.minutes
     overview_list = []
-    for proj in sorted(overview.values(), key=lambda p: (p["yt_project"], p["billing_project"])):
+    for proj in sorted(overview.values(),
+                       key=lambda p: (p["billing_project"] is None, p["yt_project"], p["billing_project"] or "")):
         targets = sorted(proj.pop("targets").values(),
                          key=lambda t: (t["target_kind"] != PROJECT, t["label"]))
         overview_list.append({**proj, **duration(proj["minutes"]),
+                              "nonbillable": duration(proj.pop("nonbillable_minutes")),
                               "targets": [{**t, **duration(t["minutes"])} for t in targets]})
 
     changed = sum(1 for r in rows if r["transfer"] and r["transfer"]["state"] == "changed")

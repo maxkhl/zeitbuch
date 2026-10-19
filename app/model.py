@@ -14,6 +14,8 @@ class WorkItem:
     text: str = ""
     author: str | None = None
     created: int = 0  # ms, nur für eine stabile Reihenfolge
+    # Work-Item-Attribute: Name → Wert, None = leer
+    attributes: dict = field(default_factory=dict, compare=False)
 
 
 @dataclass

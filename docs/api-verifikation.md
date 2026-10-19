@@ -17,7 +17,10 @@ Quelltext von Dolibarr **23.0.2** (Tag `23.0.2`, Dateien
 | `fields` | Pflicht, sonst kommt nur die ID |
 | `$top`, `$skip` | Paging; ohne `$top` liefert der Server nur 42 Einträge |
 
-Genutzte Felder: `id, date, duration(minutes), type(name), text, author(login), issue(idReadable), created`.
+Genutzte Felder: `id, date, duration(minutes), type(name), text, author(login), issue(idReadable), created, attributes(name,value(name))`.
+`attributes` ist eine Liste von `WorkItemAttribute` (`name`, `value` vom Typ
+`WorkItemAttributeValue` mit `name`, kann leer sein) – darüber kommt das
+Attribut „Abrechenbar“.
 `date` ist ein UTC-Zeitstempel in Millisekunden auf Mitternacht des Tages →
 zeitbuch nimmt das UTC-Datum.
 
@@ -28,7 +31,8 @@ mit `name`.
 
 Konfigurationsprüfung: `GET /api/admin/projects?fields=id,shortName,…`, dann
 `/api/admin/projects/{id}/customFields?fields=field(name),bundle(values(name))`
-und `/api/admin/projects/{id}/timeTrackingSettings?fields=enabled,workItemTypes(name)`.
+und `/api/admin/projects/{id}/timeTrackingSettings?fields=enabled,workItemTypes(name),attributes(name,values(name))`
+(`attributes` = Liste von `WorkItemProjectAttribute` mit den möglichen `values`).
 
 ## Dolibarr 23.0.2: Aufgaben
 

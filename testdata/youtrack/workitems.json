@@ -20,7 +20,8 @@
    "idReadable": "CON-11",
    "$type": "Issue"
   },
-  "created": 1788249660000
+  "created": 1788249660000,
+  "attributes": []
  },
  {
   "id": "141-2",
@@ -43,7 +44,8 @@
    "idReadable": "CON-10",
    "$type": "Issue"
   },
-  "created": 1788249720000
+  "created": 1788249720000,
+  "attributes": []
  },
  {
   "id": "141-3",
@@ -66,7 +68,8 @@
    "idReadable": "CON-12",
    "$type": "Issue"
   },
-  "created": 1788249780000
+  "created": 1788249780000,
+  "attributes": []
  },
  {
   "id": "141-4",
@@ -89,7 +92,8 @@
    "idReadable": "CON-1",
    "$type": "Issue"
   },
-  "created": 1788336240000
+  "created": 1788336240000,
+  "attributes": []
  },
  {
   "id": "141-5",
@@ -112,7 +116,8 @@
    "idReadable": "CON-3",
    "$type": "Issue"
   },
-  "created": 1788336300000
+  "created": 1788336300000,
+  "attributes": []
  },
  {
   "id": "141-6",
@@ -135,7 +140,8 @@
    "idReadable": "CON-21",
    "$type": "Issue"
   },
-  "created": 1788422760000
+  "created": 1788422760000,
+  "attributes": []
  },
  {
   "id": "141-7",
@@ -158,7 +164,8 @@
    "idReadable": "CON-21",
    "$type": "Issue"
   },
-  "created": 1788422820000
+  "created": 1788422820000,
+  "attributes": []
  },
  {
   "id": "141-8",
@@ -169,7 +176,7 @@
    "$type": "DurationValue"
   },
   "type": {
-   "name": "Nicht abrechenbar",
+   "name": "Umsetzung",
    "$type": "WorkItemType"
   },
   "text": "VPN-Probleme",
@@ -181,7 +188,17 @@
    "idReadable": "CON-30",
    "$type": "Issue"
   },
-  "created": 1788422880000
+  "created": 1788422880000,
+  "attributes": [
+   {
+    "$type": "WorkItemAttribute",
+    "name": "Abrechenbar",
+    "value": {
+     "$type": "WorkItemAttributeValue",
+     "name": "nein"
+    }
+   }
+  ]
  },
  {
   "id": "141-9",
@@ -204,7 +221,8 @@
    "idReadable": "CON-30",
    "$type": "Issue"
   },
-  "created": 1788509340000
+  "created": 1788509340000,
+  "attributes": []
  },
  {
   "id": "141-10",
@@ -224,7 +242,8 @@
    "idReadable": "CON-11",
    "$type": "Issue"
   },
-  "created": 1788509400000
+  "created": 1788509400000,
+  "attributes": []
  },
  {
   "id": "141-11",
@@ -247,7 +266,8 @@
    "idReadable": "CON-33",
    "$type": "Issue"
   },
-  "created": 1788768660000
+  "created": 1788768660000,
+  "attributes": []
  },
  {
   "id": "141-12",
@@ -270,7 +290,8 @@
    "idReadable": "CON-32",
    "$type": "Issue"
   },
-  "created": 1788768720000
+  "created": 1788768720000,
+  "attributes": []
  },
  {
   "id": "141-13",
@@ -293,7 +314,8 @@
    "idReadable": "CON-32",
    "$type": "Issue"
   },
-  "created": 1788768780000
+  "created": 1788768780000,
+  "attributes": []
  },
  {
   "id": "141-14",
@@ -316,7 +338,8 @@
    "idReadable": "CON-1",
    "$type": "Issue"
   },
-  "created": 1788855240000
+  "created": 1788855240000,
+  "attributes": []
  },
  {
   "id": "141-15",
@@ -339,7 +362,8 @@
    "idReadable": "XSYS-2",
    "$type": "Issue"
   },
-  "created": 1788855300000
+  "created": 1788855300000,
+  "attributes": []
  },
  {
   "id": "141-16",
@@ -362,7 +386,8 @@
    "idReadable": "XSYS-1",
    "$type": "Issue"
   },
-  "created": 1788941760000
+  "created": 1788941760000,
+  "attributes": []
  },
  {
   "id": "141-17",
@@ -385,10 +410,53 @@
    "idReadable": "CON-11",
    "$type": "Issue"
   },
-  "created": 1789373820000
+  "created": 1789373820000,
+  "attributes": [
+   {
+    "$type": "WorkItemAttribute",
+    "name": "Abrechenbar",
+    "value": {
+     "$type": "WorkItemAttributeValue",
+     "name": "ja"
+    }
+   }
+  ]
  },
  {
   "id": "141-18",
+  "$type": "IssueWorkItem",
+  "date": 1789344000000,
+  "duration": {
+   "minutes": 20,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Abstimmung Testsystem-Ausfall",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-11",
+   "$type": "Issue"
+  },
+  "created": 1789373880000,
+  "attributes": [
+   {
+    "$type": "WorkItemAttribute",
+    "name": "Abrechenbar",
+    "value": {
+     "$type": "WorkItemAttributeValue",
+     "name": "nein"
+    }
+   }
+  ]
+ },
+ {
+  "id": "141-19",
   "$type": "IssueWorkItem",
   "date": 1789430400000,
   "duration": {
@@ -408,10 +476,11 @@
    "idReadable": "CON-10",
    "$type": "Issue"
   },
-  "created": 1789460280000
+  "created": 1789460340000,
+  "attributes": []
  },
  {
-  "id": "141-19",
+  "id": "141-20",
   "$type": "IssueWorkItem",
   "date": 1789430400000,
   "duration": {
@@ -431,10 +500,11 @@
    "idReadable": "CON-4",
    "$type": "Issue"
   },
-  "created": 1789460340000
+  "created": 1789460400000,
+  "attributes": []
  },
  {
-  "id": "141-20",
+  "id": "141-21",
   "$type": "IssueWorkItem",
   "date": 1789516800000,
   "duration": {
@@ -454,10 +524,11 @@
    "idReadable": "CON-12",
    "$type": "Issue"
   },
-  "created": 1789546800000
+  "created": 1789546860000,
+  "attributes": []
  },
  {
-  "id": "141-21",
+  "id": "141-22",
   "$type": "IssueWorkItem",
   "date": 1789603200000,
   "duration": {
@@ -477,10 +548,11 @@
    "idReadable": "XSYS-2",
    "$type": "Issue"
   },
-  "created": 1789633260000
+  "created": 1789633320000,
+  "attributes": []
  },
  {
-  "id": "141-22",
+  "id": "141-23",
   "$type": "IssueWorkItem",
   "date": 1789948800000,
   "duration": {
@@ -500,10 +572,11 @@
    "idReadable": "CON-21",
    "$type": "Issue"
   },
-  "created": 1789978920000
+  "created": 1789978980000,
+  "attributes": []
  },
  {
-  "id": "141-23",
+  "id": "141-24",
   "$type": "IssueWorkItem",
   "date": 1790035200000,
   "duration": {
@@ -523,10 +596,11 @@
    "idReadable": "CON-10",
    "$type": "Issue"
   },
-  "created": 1790065380000
+  "created": 1790065440000,
+  "attributes": []
  },
  {
-  "id": "141-24",
+  "id": "141-25",
   "$type": "IssueWorkItem",
   "date": 1790035200000,
   "duration": {
@@ -546,10 +620,11 @@
    "idReadable": "CON-1",
    "$type": "Issue"
   },
-  "created": 1790065440000
+  "created": 1790065500000,
+  "attributes": []
  },
  {
-  "id": "141-25",
+  "id": "141-26",
   "$type": "IssueWorkItem",
   "date": 1790121600000,
   "duration": {
@@ -569,6 +644,7 @@
    "idReadable": "CON-8",
    "$type": "Issue"
   },
-  "created": 1790151900000
+  "created": 1790151960000,
+  "attributes": []
  }
 ]

@@ -12,7 +12,9 @@ def test_defaults_aus_konzept(monkeypatch):
     assert cfg.db == "/data/zeitbuch.db"
     assert cfg.yt == FieldConfig()
     assert cfg.yt.field_type == "Type"
-    assert cfg.yt.work_nonbillable == "Nicht abrechenbar"
+    assert cfg.yt.attr_billable == "Abrechenbar"
+    assert cfg.yt.attr_billable_no == "nein"
+    assert not hasattr(cfg.yt, "work_nonbillable")
     assert cfg.yt.authors == ()
     # Ohne URLs läuft auto im Mock
     assert not cfg.youtrack_real and not cfg.dolibarr_real

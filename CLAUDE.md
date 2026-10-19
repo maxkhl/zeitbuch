@@ -30,6 +30,8 @@ UI, Doku und Fehlermeldungen sind auf Deutsch.
 - `app/rules.py` – Zuordnung, Fehlerfälle, Aggregation, Rundung (Konzept 5).
   Ziel ist immer der nächste Abrechnungsknoten, der bebuchbar sein muss; nie
   auf höhere Knoten ausweichen. Abstimmung optional (0 = keine Umleitung).
+  Nicht abrechenbar = Work-Item-Attribut (`ZEITBUCH_YT_ATTR_BILLABLE`), wird vor
+  allen anderen Regeln aussortiert; es gibt keinen Arbeitstyp dafür.
   Reine Funktionen, keine I/O. Hier liegt die Fachlogik; Änderungen nur mit Test.
 - `app/month.py` – Monatsauswertung für die UI, übertragen-Zustand.
 - `app/sync.py` – Dolibarr-Vorschau und -Übertragung (Konzept 7).

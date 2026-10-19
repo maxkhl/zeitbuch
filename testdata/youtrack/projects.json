@@ -127,10 +127,22 @@
     {
      "name": "Besprechung",
      "$type": "WorkItemType"
-    },
+    }
+   ],
+   "attributes": [
     {
-     "name": "Nicht abrechenbar",
-     "$type": "WorkItemType"
+     "$type": "WorkItemProjectAttribute",
+     "name": "Abrechenbar",
+     "values": [
+      {
+       "$type": "WorkItemAttributeValue",
+       "name": "ja"
+      },
+      {
+       "$type": "WorkItemAttributeValue",
+       "name": "nein"
+      }
+     ]
     }
    ]
   }
@@ -223,10 +235,22 @@
     {
      "name": "Besprechung",
      "$type": "WorkItemType"
-    },
+    }
+   ],
+   "attributes": [
     {
-     "name": "Nicht abrechenbar",
-     "$type": "WorkItemType"
+     "$type": "WorkItemProjectAttribute",
+     "name": "Abrechenbar",
+     "values": [
+      {
+       "$type": "WorkItemAttributeValue",
+       "name": "ja"
+      },
+      {
+       "$type": "WorkItemAttributeValue",
+       "name": "nein"
+      }
+     ]
     }
    ]
   }

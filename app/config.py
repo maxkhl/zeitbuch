@@ -34,7 +34,9 @@ class FieldConfig:
     value_yes: str = "ja"
     work_implementation: str = "Umsetzung"
     work_meeting: str = "Besprechung"
-    work_nonbillable: str = "Nicht abrechenbar"
+    # Work-Item-Attribut: Wert attr_billable_no = nicht abrechenbar, leer/sonst = abrechenbar
+    attr_billable: str = "Abrechenbar"
+    attr_billable_no: str = "nein"
     authors: tuple = ()
 
     # Attribut → Env-Variable (ohne authors, das ist eine Liste)
@@ -49,7 +51,8 @@ class FieldConfig:
         "value_yes": "ZEITBUCH_YT_VALUE_YES",
         "work_implementation": "ZEITBUCH_YT_WORK_IMPLEMENTATION",
         "work_meeting": "ZEITBUCH_YT_WORK_MEETING",
-        "work_nonbillable": "ZEITBUCH_YT_WORK_NONBILLABLE",
+        "attr_billable": "ZEITBUCH_YT_ATTR_BILLABLE",
+        "attr_billable_no": "ZEITBUCH_YT_ATTR_BILLABLE_NO",
     }
 
     @classmethod

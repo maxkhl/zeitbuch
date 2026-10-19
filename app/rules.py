@@ -194,21 +194,22 @@ def evaluate(work_items, issues, yt):
     parts = {}  # Zeilenschlüssel → Beschreibungsteile in Reihenfolge, dedupliziert
     problems = []
     nonbillable = []
-    known_types = (yt.work_implementation, yt.work_meeting, yt.work_nonbillable)
+    known_types = (yt.work_implementation, yt.work_meeting)
 
     for wi in sorted(work_items, key=lambda w: (w.date, w.created, w.id)):
         if wi.minutes <= 0:
             continue
         logged = issues.get(wi.issue)
         summary = logged.summary if logged else ""
-        if not wi.work_type:
-            problems.append(Problem(wi, summary, "Arbeitstyp fehlt"))
-            continue
-        if wi.work_type == yt.work_nonbillable:
+        # Nicht abrechenbar zuerst: wird nie gebucht, Arbeitstyp und Ziel spielen keine Rolle
+        if wi.attributes.get(yt.attr_billable) == yt.attr_billable_no:
             project = res.billing_project_of(wi.issue)
             nonbillable.append(NonBillable(
                 wi, summary, project.id if project else None,
                 project.summary if project else None))
+            continue
+        if not wi.work_type:
+            problems.append(Problem(wi, summary, "Arbeitstyp fehlt"))
             continue
         if wi.work_type not in known_types:
             problems.append(Problem(wi, summary, f"Unbekannter Arbeitstyp „{wi.work_type}“"))

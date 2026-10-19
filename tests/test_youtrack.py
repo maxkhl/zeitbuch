@@ -28,6 +28,15 @@ def test_parse_work_item_utc_datum():
     assert wi.text == ""
 
 
+def test_parse_work_item_attribute():
+    raw = {"id": "1-1", "date": 1759190400000, "duration": {"minutes": 45},
+           "issue": {"idReadable": "CON-1"},
+           "attributes": [{"name": "Abrechenbar", "value": {"name": "nein"}},
+                          {"name": "Ort", "value": None}]}
+    assert parse_work_item(raw).attributes == {"Abrechenbar": "nein", "Ort": None}
+    assert parse_work_item({**raw, "attributes": None}).attributes == {}
+
+
 def test_parse_issue_felder_und_parent():
     raw = {"idReadable": "CON-2", "summary": "Pos", "project": {"shortName": "CON"},
            "parent": {"issues": [{"idReadable": "CON-1"}]},
@@ -76,7 +85,7 @@ def test_beispieldaten_decken_regeln_ab(mock):
     # CON-31 hat keine Abstimmungsposition: Besprechung an CON-32 bleibt dort
     meeting = next(row for row in r.rows if row.target == "CON-32" and row.date.day == 7)
     assert meeting.raw_minutes == 150
-    assert len(r.nonbillable) == 1
+    assert len(r.nonbillable) == 2
 
 
 def test_konfigurationspruefung(mock):
@@ -87,6 +96,13 @@ def test_konfigurationspruefung(mock):
     assert "Wert „Abrechnungsprojekt“ fehlt im Feld „Type“ in Projekt INT" in msgs
     assert "Feld „Bebuchbar“ fehlt in Projekt INT" in msgs
     assert "Zeiterfassung ist in Projekt INT nicht aktiviert" in msgs
+
+
+def test_konfigurationspruefung_attribut(mock):
+    msgs = check_youtrack_config(mock, ["CON"], FieldConfig(attr_billable="Abrechenbarkeit"))
+    assert msgs == ["Work-Item-Attribut „Abrechenbarkeit“ fehlt in Projekt CON"]
+    msgs = check_youtrack_config(mock, ["CON"], FieldConfig(attr_billable_no="no"))
+    assert msgs == ["Wert „no“ fehlt im Work-Item-Attribut „Abrechenbar“ in Projekt CON"]
 
 
 def test_konfigurationspruefung_tippfehler(mock):
@@ -140,6 +156,7 @@ def test_real_work_items_parameter_und_paging(monkeypatch):
     assert params["startDate"] == "2026-09-01" and params["endDate"] == "2026-09-30"
     assert params["query"] == "project: {CON}, {XSYS}"
     assert params["author"] == ["max"]
+    assert "attributes(name,value(name))" in params["fields"]
     assert len(yt.session.calls) == 2
 
 

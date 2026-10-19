@@ -54,7 +54,11 @@ def test_monat_uebersicht_und_summen(client, mapped):
     assert con1["minutes"] == sum(t["minutes"] for t in con1["targets"])
     assert data["totals"]["minutes"] == sum(r["minutes"] for r in data["rows"])
     assert data["totals"]["problems"] == len(data["problems"]) == 5
-    assert data["totals"]["nonbillable"]["minutes"] == 40
+    assert data["totals"]["nonbillable"]["minutes"] == 60
+    # Eigene Summe je Abrechnungsprojekt, auch ohne Abrechnungsprojekt
+    assert con1["nonbillable"]["minutes"] == 20
+    assert data["overview"][-1]["billing_project"] is None
+    assert data["overview"][-1]["nonbillable"]["minutes"] == 40
 
 
 def test_nicht_zuordenbar_mit_link(client, mapped):
