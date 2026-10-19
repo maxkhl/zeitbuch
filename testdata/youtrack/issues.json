@@ -1,0 +1,822 @@
+[
+ {
+  "idReadable": "CON-1",
+  "summary": "Webshop-Integration",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsprojekt",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-001"
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "nein",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-2",
+  "summary": "1. Kundenstammdaten",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-1",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-001 | 1"
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-3",
+  "summary": "2. Partnerrollen",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-1",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-001 | 2"
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-4",
+  "summary": "9. Koordination / Projektmanagement",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-1",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-001 | 9"
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-10",
+  "summary": "Filter Replikation",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-2",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Task",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-11",
+  "summary": "Mapping Adressfelder",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-10",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Task",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Fixed",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-12",
+  "summary": "Rollenmodell abstimmen",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-3",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Task",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-20",
+  "summary": "Support-Projekt",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsprojekt",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-21",
+  "summary": "Fehler im Export",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-20",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Bug",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-30",
+  "summary": "Interne Toolpflege",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Task",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-31",
+  "summary": "Datenmigration",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsprojekt",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-003"
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "nein",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-32",
+  "summary": "1. Analyse",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-31",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": "S-2026-MUSTER-003 | 1"
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "CON-33",
+  "summary": "2. Umsetzung",
+  "$type": "Issue",
+  "project": {
+   "shortName": "CON",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "CON-31",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsposition",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Abstimmung",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "XSYS-1",
+  "summary": "Schnittstellenbetreuung",
+  "$type": "Issue",
+  "project": {
+   "shortName": "XSYS",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Abrechnungsprojekt",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": "X-4711"
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "ja",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   }
+  ]
+ },
+ {
+  "idReadable": "XSYS-2",
+  "summary": "Monitoring einrichten",
+  "$type": "Issue",
+  "project": {
+   "shortName": "XSYS",
+   "$type": "Project"
+  },
+  "parent": {
+   "issues": [
+    {
+     "idReadable": "XSYS-1",
+     "$type": "Issue"
+    }
+   ],
+   "$type": "IssueLink"
+  },
+  "customFields": [
+   {
+    "name": "Type",
+    "$type": "SingleEnumIssueCustomField",
+    "value": {
+     "name": "Task",
+     "$type": "EnumBundleElement"
+    }
+   },
+   {
+    "name": "State",
+    "$type": "StateIssueCustomField",
+    "value": {
+     "name": "Open",
+     "$type": "StateBundleElement"
+    }
+   },
+   {
+    "name": "Ext-Projekt",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Bebuchbar",
+    "$type": "SingleEnumIssueCustomField",
+    "value": null
+   },
+   {
+    "name": "Ext-Position",
+    "$type": "SimpleIssueCustomField",
+    "value": null
+   }
+  ]
+ }
+]

@@ -1,0 +1,267 @@
+[
+ {
+  "id": "0-11",
+  "shortName": "CON",
+  "name": "Beispiel Consulting",
+  "$type": "Project",
+  "customFields": [
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "Type",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "Bug",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Task",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Feature",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Epic",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Abrechnungsprojekt",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Abrechnungsposition",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   },
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "State",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "Open",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Fixed",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   },
+   {
+    "$type": "SimpleProjectCustomField",
+    "field": {
+     "name": "Ext-Projekt",
+     "$type": "CustomField"
+    }
+   },
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "Bebuchbar",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "ja",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "nein",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   },
+   {
+    "$type": "SimpleProjectCustomField",
+    "field": {
+     "name": "Ext-Position",
+     "$type": "CustomField"
+    }
+   },
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "Abstimmung",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "ja",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "nein",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   }
+  ],
+  "timeTrackingSettings": {
+   "$type": "ProjectTimeTrackingSettings",
+   "enabled": true,
+   "workItemTypes": [
+    {
+     "name": "Umsetzung",
+     "$type": "WorkItemType"
+    },
+    {
+     "name": "Besprechung",
+     "$type": "WorkItemType"
+    },
+    {
+     "name": "Nicht abrechenbar",
+     "$type": "WorkItemType"
+    }
+   ]
+  }
+ },
+ {
+  "id": "0-12",
+  "shortName": "XSYS",
+  "name": "Beispiel Systemhaus",
+  "$type": "Project",
+  "customFields": [
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "Type",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "Bug",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Task",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Feature",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Epic",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Abrechnungsprojekt",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Abrechnungsposition",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   },
+   {
+    "$type": "SimpleProjectCustomField",
+    "field": {
+     "name": "Ext-Projekt",
+     "$type": "CustomField"
+    }
+   },
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "Bebuchbar",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "ja",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "nein",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   },
+   {
+    "$type": "SimpleProjectCustomField",
+    "field": {
+     "name": "Ext-Position",
+     "$type": "CustomField"
+    }
+   }
+  ],
+  "timeTrackingSettings": {
+   "$type": "ProjectTimeTrackingSettings",
+   "enabled": true,
+   "workItemTypes": [
+    {
+     "name": "Umsetzung",
+     "$type": "WorkItemType"
+    },
+    {
+     "name": "Besprechung",
+     "$type": "WorkItemType"
+    },
+    {
+     "name": "Nicht abrechenbar",
+     "$type": "WorkItemType"
+    }
+   ]
+  }
+ },
+ {
+  "id": "0-13",
+  "shortName": "INT",
+  "name": "Intern",
+  "$type": "Project",
+  "customFields": [
+   {
+    "$type": "EnumProjectCustomField",
+    "field": {
+     "name": "Type",
+     "$type": "CustomField"
+    },
+    "bundle": {
+     "$type": "EnumBundle",
+     "values": [
+      {
+       "name": "Bug",
+       "$type": "EnumBundleElement"
+      },
+      {
+       "name": "Task",
+       "$type": "EnumBundleElement"
+      }
+     ]
+    }
+   }
+  ],
+  "timeTrackingSettings": {
+   "$type": "ProjectTimeTrackingSettings",
+   "enabled": false,
+   "workItemTypes": []
+  }
+ }
+]

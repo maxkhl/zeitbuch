@@ -1,0 +1,551 @@
+[
+ {
+  "id": "141-1",
+  "$type": "IssueWorkItem",
+  "date": 1788220800000,
+  "duration": {
+   "minutes": 50,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Mapping angepasst",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-11",
+   "$type": "Issue"
+  },
+  "created": 1788249660000
+ },
+ {
+  "id": "141-2",
+  "$type": "IssueWorkItem",
+  "date": 1788220800000,
+  "duration": {
+   "minutes": 20,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": null,
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-10",
+   "$type": "Issue"
+  },
+  "created": 1788249720000
+ },
+ {
+  "id": "141-3",
+  "$type": "IssueWorkItem",
+  "date": 1788220800000,
+  "duration": {
+   "minutes": 45,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": null,
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-12",
+   "$type": "Issue"
+  },
+  "created": 1788249780000
+ },
+ {
+  "id": "141-4",
+  "$type": "IssueWorkItem",
+  "date": 1788307200000,
+  "duration": {
+   "minutes": 30,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Jour Fix",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-1",
+   "$type": "Issue"
+  },
+  "created": 1788336240000
+ },
+ {
+  "id": "141-5",
+  "$type": "IssueWorkItem",
+  "date": 1788307200000,
+  "duration": {
+   "minutes": 95,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Partnerrollen konfiguriert",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-3",
+   "$type": "Issue"
+  },
+  "created": 1788336300000
+ },
+ {
+  "id": "141-6",
+  "$type": "IssueWorkItem",
+  "date": 1788393600000,
+  "duration": {
+   "minutes": 15,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Exportfehler analysiert",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-21",
+   "$type": "Issue"
+  },
+  "created": 1788422760000
+ },
+ {
+  "id": "141-7",
+  "$type": "IssueWorkItem",
+  "date": 1788393600000,
+  "duration": {
+   "minutes": 10,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Rückfrage Fachbereich",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-21",
+   "$type": "Issue"
+  },
+  "created": 1788422820000
+ },
+ {
+  "id": "141-8",
+  "$type": "IssueWorkItem",
+  "date": 1788393600000,
+  "duration": {
+   "minutes": 40,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Nicht abrechenbar",
+   "$type": "WorkItemType"
+  },
+  "text": "VPN-Probleme",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-30",
+   "$type": "Issue"
+  },
+  "created": 1788422880000
+ },
+ {
+  "id": "141-9",
+  "$type": "IssueWorkItem",
+  "date": 1788480000000,
+  "duration": {
+   "minutes": 30,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Skript aktualisiert",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-30",
+   "$type": "Issue"
+  },
+  "created": 1788509340000
+ },
+ {
+  "id": "141-10",
+  "$type": "IssueWorkItem",
+  "date": 1788480000000,
+  "duration": {
+   "minutes": 25,
+   "$type": "DurationValue"
+  },
+  "type": null,
+  "text": "Feldlängen geprüft",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-11",
+   "$type": "Issue"
+  },
+  "created": 1788509400000
+ },
+ {
+  "id": "141-11",
+  "$type": "IssueWorkItem",
+  "date": 1788739200000,
+  "duration": {
+   "minutes": 60,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Ladeprogramm",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-33",
+   "$type": "Issue"
+  },
+  "created": 1788768660000
+ },
+ {
+  "id": "141-12",
+  "$type": "IssueWorkItem",
+  "date": 1788739200000,
+  "duration": {
+   "minutes": 30,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Abstimmung Analyseumfang",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-32",
+   "$type": "Issue"
+  },
+  "created": 1788768720000
+ },
+ {
+  "id": "141-13",
+  "$type": "IssueWorkItem",
+  "date": 1788739200000,
+  "duration": {
+   "minutes": 120,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Ist-Analyse",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-32",
+   "$type": "Issue"
+  },
+  "created": 1788768780000
+ },
+ {
+  "id": "141-14",
+  "$type": "IssueWorkItem",
+  "date": 1788825600000,
+  "duration": {
+   "minutes": 15,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Projektplan",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-1",
+   "$type": "Issue"
+  },
+  "created": 1788855240000
+ },
+ {
+  "id": "141-15",
+  "$type": "IssueWorkItem",
+  "date": 1788825600000,
+  "duration": {
+   "minutes": 75,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Checks eingerichtet",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "XSYS-2",
+   "$type": "Issue"
+  },
+  "created": 1788855300000
+ },
+ {
+  "id": "141-16",
+  "$type": "IssueWorkItem",
+  "date": 1788912000000,
+  "duration": {
+   "minutes": 60,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Jour Fix",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "XSYS-1",
+   "$type": "Issue"
+  },
+  "created": 1788941760000
+ },
+ {
+  "id": "141-17",
+  "$type": "IssueWorkItem",
+  "date": 1789344000000,
+  "duration": {
+   "minutes": 200,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Tests, Transport",
+  "author": {
+   "login": "assistent",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-11",
+   "$type": "Issue"
+  },
+  "created": 1789373820000
+ },
+ {
+  "id": "141-18",
+  "$type": "IssueWorkItem",
+  "date": 1789430400000,
+  "duration": {
+   "minutes": 35,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Filter erweitert",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-10",
+   "$type": "Issue"
+  },
+  "created": 1789460280000
+ },
+ {
+  "id": "141-19",
+  "$type": "IssueWorkItem",
+  "date": 1789430400000,
+  "duration": {
+   "minutes": 30,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Statusbericht",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-4",
+   "$type": "Issue"
+  },
+  "created": 1789460340000
+ },
+ {
+  "id": "141-20",
+  "$type": "IssueWorkItem",
+  "date": 1789516800000,
+  "duration": {
+   "minutes": 90,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Rollen angelegt",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-12",
+   "$type": "Issue"
+  },
+  "created": 1789546800000
+ },
+ {
+  "id": "141-21",
+  "$type": "IssueWorkItem",
+  "date": 1789603200000,
+  "duration": {
+   "minutes": 50,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Alarmierung getestet",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "XSYS-2",
+   "$type": "Issue"
+  },
+  "created": 1789633260000
+ },
+ {
+  "id": "141-22",
+  "$type": "IssueWorkItem",
+  "date": 1789948800000,
+  "duration": {
+   "minutes": 5,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": null,
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-21",
+   "$type": "Issue"
+  },
+  "created": 1789978920000
+ },
+ {
+  "id": "141-23",
+  "$type": "IssueWorkItem",
+  "date": 1790035200000,
+  "duration": {
+   "minutes": 160,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Umsetzung",
+   "$type": "WorkItemType"
+  },
+  "text": "Replikation getestet",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-10",
+   "$type": "Issue"
+  },
+  "created": 1790065380000
+ },
+ {
+  "id": "141-24",
+  "$type": "IssueWorkItem",
+  "date": 1790035200000,
+  "duration": {
+   "minutes": 45,
+   "$type": "DurationValue"
+  },
+  "type": {
+   "name": "Besprechung",
+   "$type": "WorkItemType"
+  },
+  "text": "Jour Fix",
+  "author": {
+   "login": "m.muster",
+   "$type": "User"
+  },
+  "issue": {
+   "idReadable": "CON-1",
+   "$type": "Issue"
+  },
+  "created": 1790065440000
+ }
+]
