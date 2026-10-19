@@ -20,3 +20,13 @@ def create_youtrack(cfg):
                 "oder ZEITBUCH_BACKEND=mock)")
     return MockYouTrack()
 
+
+
+def create_dolibarr(cfg):
+    from .dolibarr import Dolibarr, MockDolibarr
+
+    if cfg.dolibarr_real:
+        return Dolibarr(cfg.dolibarr_url, cfg.dolibarr_key, cfg.http_timeout)
+    log.warning("MOCK-MODUS: Dolibarr wird simuliert (ZEITBUCH_DOLIBARR_URL/-KEY fehlen "
+                "oder ZEITBUCH_BACKEND=mock)")
+    return MockDolibarr()

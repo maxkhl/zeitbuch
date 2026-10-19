@@ -7,11 +7,12 @@ import threading
 from flask import Flask, jsonify, request, send_from_directory
 
 from . import __version__
-from .backends import BackendError, create_youtrack
+from .backends import BackendError, create_dolibarr, create_youtrack
 from .checks import check_youtrack_config
 from .config import Config
 from .db import Database
-from .month import month_view, parse_month
+from .month import load_month, month_view, parse_month
+from .sync import StalePlan, SyncError, apply_plan, build_plan
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class CheckState:
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.result = {"done": False, "youtrack": None, "config": []}
+        self.result = {"done": False, "youtrack": None, "dolibarr": None, "config": []}
 
     def set(self, result):
         with self.lock:
@@ -41,24 +42,39 @@ class CheckState:
             return dict(self.result)
 
 
-def create_app(cfg=None, youtrack=None, startup_check=False):
+def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
     cfg = cfg or Config.from_env()
     youtrack = youtrack or create_youtrack(cfg)
+    dolibarr = dolibarr or create_dolibarr(cfg)
     db = Database(cfg.db)
     check = CheckState()
 
     app = Flask(__name__, static_folder="static", static_url_path="/static")
-    app.extensions["zeitbuch"] = {"cfg": cfg, "db": db, "youtrack": youtrack, "check": check}
+    app.extensions["zeitbuch"] = {"cfg": cfg, "db": db, "youtrack": youtrack,
+                                  "dolibarr": dolibarr, "check": check}
 
     def run_check():
-        result = {"youtrack": None, "config": []}
-        try:
-            result["youtrack"] = {"ok": True, "user": youtrack.ping()}
-        except BackendError as e:
-            result["youtrack"] = {"ok": False, "error": str(e)}
-        projects = [p["short_name"] for p in db.projects()]
+        result = {"youtrack": None, "dolibarr": None, "config": []}
+        for name, backend in (("youtrack", youtrack), ("dolibarr", dolibarr)):
+            try:
+                result[name] = {"ok": True, "user": backend.ping()}
+            except BackendError as e:
+                result[name] = {"ok": False, "error": str(e)}
+        mapping = db.projects()
         if result["youtrack"]["ok"]:
-            result["config"] = check_youtrack_config(youtrack, projects, cfg.yt)
+            result["config"] = check_youtrack_config(
+                youtrack, [p["short_name"] for p in mapping], cfg.yt)
+        if result["dolibarr"]["ok"]:
+            for p in mapping:
+                if p["dolibarr_project_id"] is None:
+                    continue
+                try:
+                    if dolibarr.project(p["dolibarr_project_id"]) is None:
+                        result["config"].append(
+                            f"Dolibarr-Projekt {p['dolibarr_project_id']} (Mapping für "
+                            f"{p['short_name']}) nicht gefunden")
+                except BackendError as e:
+                    result["config"].append(f"Dolibarr-Projekt {p['dolibarr_project_id']}: {e}")
         for msg in result["config"]:
             log.warning("Konfigurationsprüfung: %s", msg)
         check.set(result)
@@ -120,7 +136,7 @@ def create_app(cfg=None, youtrack=None, startup_check=False):
     def info():
         return jsonify({
             "version": __version__,
-            "mock": {"youtrack": youtrack.mode == "mock"},
+            "mock": {"youtrack": youtrack.mode == "mock", "dolibarr": dolibarr.mode == "mock"},
             "check": check.get(),
         })
 
@@ -154,18 +170,43 @@ def create_app(cfg=None, youtrack=None, startup_check=False):
                          str(row.get("label") or ""), str(row.get("description") or ""))
         return jsonify({"ok": True})
 
+    # ------------------------------------------------------------ Dolibarr
+    def plan_for(month):
+        result, issues = load_month(youtrack, db, cfg.yt, month)
+        return build_plan(month, result, issues, db, dolibarr, cfg.yt, youtrack)
+
+    @app.get("/api/dolibarr/preview")
+    def dolibarr_preview():
+        return jsonify(plan_for(month_arg(request.args.get("month"))))
+
+    @app.post("/api/dolibarr/apply")
+    def dolibarr_apply():
+        data = body()
+        month = month_arg(data.get("month"))
+        plan = plan_for(month)
+        try:
+            done = apply_plan(plan, db, dolibarr, data.get("fingerprint"))
+        except StalePlan as e:
+            return jsonify({"error": str(e), "plan": plan}), 409
+        except SyncError as e:
+            raise ApiError(409, str(e))
+        return jsonify({"done": done, "plan": plan_for(month)})
+
     # ------------------------------------------------------------ Einstellungen
     @app.get("/api/settings")
     def settings():
-        available, error = [], None
-        try:
-            available = youtrack.projects()
-        except BackendError as e:
-            error = str(e)
+        lists = {}
+        for name, backend in (("youtrack", youtrack), ("dolibarr", dolibarr)):
+            try:
+                lists[name] = (backend.projects(), None)
+            except BackendError as e:
+                lists[name] = ([], str(e))
         return jsonify({
             "projects": db.projects(),
-            "youtrack_projects": available,
-            "youtrack_error": error,
+            "youtrack_projects": lists["youtrack"][0],
+            "youtrack_error": lists["youtrack"][1],
+            "dolibarr_projects": lists["dolibarr"][0],
+            "dolibarr_error": lists["dolibarr"][1],
             "field_config": cfg.yt.as_list(),
         })
 

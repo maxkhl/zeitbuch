@@ -1,5 +1,6 @@
 import pytest
 
+from app.backends.dolibarr import MockDolibarr
 from app.backends.youtrack import MockYouTrack
 from app.config import Config
 from app.web import create_app
@@ -26,8 +27,13 @@ def youtrack():
 
 
 @pytest.fixture
-def app(cfg, youtrack):
-    app = create_app(cfg, youtrack=youtrack)
+def dolibarr():
+    return MockDolibarr()
+
+
+@pytest.fixture
+def app(cfg, youtrack, dolibarr):
+    app = create_app(cfg, youtrack=youtrack, dolibarr=dolibarr)
     app.config["TESTING"] = True
     return app
 
