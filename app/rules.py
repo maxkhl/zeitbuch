@@ -258,5 +258,5 @@ def format_hm(minutes):
 
 
 def format_decimal(minutes):
-    """1,75h – durch die Rundung auf 15 Minuten immer exakt."""
-    return f"{minutes // 60},{minutes % 60 * 100 // 60:02d}h"
+    """1,75h – für gerundete Werte (Vielfache von 15 Minuten) immer exakt."""
+    return f"{minutes / 60:.2f}".replace(".", ",") + "h"

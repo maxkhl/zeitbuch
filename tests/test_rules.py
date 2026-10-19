@@ -68,6 +68,7 @@ def test_formate():
     assert format_decimal(105) == "1,75h"
     assert format_decimal(30) == "0,50h"
     assert format_decimal(120) == "2,00h"
+    assert format_decimal(40) == "0,67h"  # Rohzeit, nicht gerundet
 
 
 def test_rundung_auf_tagessumme_nicht_je_work_item():

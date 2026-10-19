@@ -4,9 +4,47 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>zeitbuch</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <h1>zeitbuch</h1>
-  <p>Im Aufbau.</p>
+  <div id="mock-banner" class="mock-banner" hidden></div>
+
+  <header class="top">
+    <div class="brand">
+      <h1>zeitbuch</h1>
+      <span class="sub">YouTrack → externe Systeme &amp; Dolibarr</span>
+    </div>
+    <div class="month-nav">
+      <button id="month-prev" class="btn" type="button" title="Vormonat" aria-label="Vormonat">‹</button>
+      <input id="month" type="month" aria-label="Monat">
+      <button id="month-next" class="btn" type="button" title="Folgemonat" aria-label="Folgemonat">›</button>
+      <button id="reload" class="btn" type="button" title="Neu aus YouTrack laden">Neu laden</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" type="button" role="tab" data-tab="overview">Übersicht <span class="light" id="light"></span></button>
+    <button class="tab" type="button" role="tab" data-tab="external">Externe Systeme <span class="badge" id="badge-external" hidden></span></button>
+    <button class="tab" type="button" role="tab" data-tab="problems">Nicht zuordenbar <span class="badge bad" id="badge-problems" hidden></span></button>
+    <button class="tab" type="button" role="tab" data-tab="dolibarr">Dolibarr</button>
+    <button class="tab" type="button" role="tab" data-tab="settings">Einstellungen</button>
+  </nav>
+
+  <main>
+    <div id="config-banner" class="notice warn" hidden></div>
+    <div id="error" class="notice bad" hidden></div>
+
+    <section id="tab-overview" class="panel" hidden></section>
+    <section id="tab-external" class="panel" hidden></section>
+    <section id="tab-problems" class="panel" hidden></section>
+    <section id="tab-dolibarr" class="panel" hidden></section>
+    <section id="tab-settings" class="panel" hidden></section>
+  </main>
+
+  <footer class="foot">
+    zeitbuch <span id="version"></span>
+  </footer>
 </body>
 </html>
