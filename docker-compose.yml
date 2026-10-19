@@ -1,0 +1,22 @@
+services:
+  zeitbuch:
+    build: .
+    # Statt selbst zu bauen das fertige Image aus GHCR nehmen:
+    # image: ghcr.io/maxkhl/zeitbuch:latest
+    container_name: zeitbuch
+    restart: unless-stopped
+    # Zugangsdaten und Feldkonfiguration, siehe .env.example
+    env_file: .env
+    environment:
+      ZEITBUCH_PORT: "8000"
+      ZEITBUCH_DB: /data/zeitbuch.db
+    ports:
+      # Keine eigene Anmeldung: nur für den Nginx Proxy Manager erreichbar machen.
+      - "${ZEITBUCH_PUBLISH:-127.0.0.1:8000}:8000"
+    volumes:
+      # Benanntes Volume: Docker übernimmt beim ersten Start die Rechte aus dem
+      # Image (Benutzer zeitbuch, UID 10001).
+      - zeitbuch-data:/data
+
+volumes:
+  zeitbuch-data:

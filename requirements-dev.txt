@@ -1,0 +1,6 @@
+# Nur für Entwicklung und CI. Im Container kommen Flask, waitress und requests
+# per apt aus Debian trixie.
+flask>=3.1
+waitress>=3.0
+requests>=2.32
+pytest>=8
