@@ -96,6 +96,7 @@ in der Datenbank gespeichert.
 | `ZEITBUCH_DOLIBARR_URL` | – | Basis-URL von Dolibarr ohne `/api` |
 | `ZEITBUCH_DOLIBARR_KEY` | – | API-Key eines eigenen Benutzers (Rechte siehe unten) |
 | `ZEITBUCH_DOLIBARR_USER_ID` | leer | ID des Dolibarr-Benutzers, auf den die Zeiten gebucht werden (sein Stundensatz gilt). Leer = API-Benutzer. |
+| `ZEITBUCH_DOLIBARR_PRODUCT_ID` | leer | ID des Produkts (Dienstleistung), das jede Zeitbuchung trägt. Leer = kein Produkt. |
 
 Im Mock-Modus zeigt die Oberfläche ein rotes Banner „MOCK-MODUS“. Der Mock
 liest fiktive Beispieldaten aus `testdata/youtrack/` und hält Dolibarr nur im
@@ -188,11 +189,21 @@ Projekteinstellungen (Felder, Arbeitstypen) der eingerichteten Projekte.
     API-Benutzer beim jeweiligen Geschäftspartner als Vertriebsmitarbeiter
     eintragen,
   - Benutzer: lesen – nur damit die Konfigurationsprüfung
-    `ZEITBUCH_DOLIBARR_USER_ID` prüfen kann.
+    `ZEITBUCH_DOLIBARR_USER_ID` prüfen kann,
+  - Produkte: lesen – nur damit die Konfigurationsprüfung
+    `ZEITBUCH_DOLIBARR_PRODUCT_ID` prüfen kann. Dolibarr verlangt dieses Recht
+    auch, wenn das Produkt eine Dienstleistung ist.
 - `ZEITBUCH_DOLIBARR_USER_ID` auf den Benutzer setzen, auf den die Zeiten
   gebucht werden sollen (ID in Dolibarr unter Benutzer & Gruppen, `id=` in der
   URL). Dessen Stundensatz übernimmt Dolibarr in die Buchung. Leer = API-Benutzer.
   Existiert die ID nicht, sperrt zeitbuch das Übertragen.
+- `ZEITBUCH_DOLIBARR_PRODUCT_ID` auf das Produkt (Dienstleistung) setzen, das
+  auch die manuellen Zeitbuchungen tragen (ID in der Produktkarte, `id=` in der
+  URL). zeitbuch gibt es bei jedem Anlegen und Ändern mit; eigene, nicht
+  fakturierte Buchungen mit anderem oder fehlendem Produkt erscheinen in der
+  Vorschau als „wird geändert“ und werden beim Übertragen korrigiert.
+  Fakturierte Buchungen bleiben unverändert. Existiert die ID nicht, sperrt
+  zeitbuch das Übertragen; fehlt nur das Leserecht, meldet es „nicht prüfbar“.
 
 Details zu den genutzten Endpunkten und ihren Eigenheiten in
 [docs/api-verifikation.md](docs/api-verifikation.md).

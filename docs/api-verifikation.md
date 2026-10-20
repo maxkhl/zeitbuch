@@ -115,6 +115,32 @@ Nachgeprüft für `ZEITBUCH_DOLIBARR_USER_ID`.
   Ändern nur neu bestimmt, wenn er leer ist oder `TIMESPENT_ALWAYS_UPDATE_THM`
   gesetzt ist.
 
+## Dolibarr 23.0.2: Produkt der Zeitbuchung
+
+Nachgeprüft für `ZEITBUCH_DOLIBARR_PRODUCT_ID`.
+
+- **Anlegen:** `addtimespent` nimmt `product_id` an und schreibt es nach
+  `fk_product` der Buchung.
+- **Ändern löscht das Produkt, wenn es fehlt:** `putTimeSpent` setzt
+  `timespent_fk_product = $product_id` (Default `null`), und
+  `Task::updateTimeSpent` übernimmt `fk_product` **ohne Bedingung** aus dem
+  Aufruf. Ein PUT ohne `product_id` leert also ein vorhandenes Produkt – auch
+  wenn die Buchung vorher per `fetchTimeSpent` mit Produkt geladen wurde.
+  zeitbuch gibt das konfigurierte Produkt deshalb bei **jedem** Anlegen und
+  Ändern mit. Ist kein Produkt konfiguriert, wird `product_id` weggelassen und
+  das Produkt damit bewusst geleert („leer = kein Produkt“).
+- **Lesen:** `GET /tasks/{id}/getTimeSpent/{tid}` enthält `fk_product`
+  (`_cleanTimeSpentObjectDatas` entfernt nur `product`). Darüber erkennt die
+  Vorschau Buchungen, deren Produkt von der Konfiguration abweicht.
+- **Prüfen, ob das Produkt existiert:** `GET /api/index.php/products/{id}`
+  (404 = gibt es nicht). `api_products.class.php` (`_fetch`) verlangt das
+  Recht **Produkte: lesen** (`produit->lire`) – auch wenn das Produkt eine
+  **Dienstleistung** ist; das Recht „Dienstleistungen lesen“ allein reicht
+  nicht. Ohne Recht 403 → zeitbuch meldet „nicht prüfbar“ und bucht trotzdem.
+- **Keine Existenzprüfung beim Buchen:** Wie beim Benutzer prüft Dolibarr die
+  Produkt-ID beim Anlegen nicht; zeitbuch sperrt das Übertragen, wenn sie nicht
+  existiert.
+
 ## Dolibarr 23.0.2 und 23.0.3: addtimespent endet mit HTTP 500
 
 Beim ersten echten Lauf gefunden und am Quelltext bestätigt; die reine

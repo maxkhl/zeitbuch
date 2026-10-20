@@ -421,7 +421,8 @@ function renderDolibarr(el) {
   html += `<div class="actions">
     <button class="btn primary" type="button" data-action="apply" ${p.pending ? "" : "disabled"}>Nach Dolibarr übertragen</button>
     <button class="btn" type="button" data-action="preview">Vorschau neu laden</button>
-    <span class="muted">${p.booking_user.id ? `Buchung auf ${esc(p.booking_user.login || `Benutzer ${p.booking_user.id}`)} · ` : "Buchung auf den API-Benutzer · "}${c.create_tasks} Aufgabe(n) neu, ${c.rename_tasks} Umbenennung(en), ${c.create} Buchung(en) neu,
+    <span class="muted">${p.booking_user.id ? `Buchung auf ${esc(p.booking_user.login || `Benutzer ${p.booking_user.id}`)} · ` : "Buchung auf den API-Benutzer · "}${
+      p.product.id ? `Produkt ${esc(p.product.label || `ID ${p.product.id}`)} · ` : "ohne Produkt · "}${c.create_tasks} Aufgabe(n) neu, ${c.rename_tasks} Umbenennung(en), ${c.create} Buchung(en) neu,
       ${c.update} geändert, ${c.unchanged} unverändert, ${c.locked + c.locked_diff} fakturiert</span>
   </div>`;
 
@@ -452,7 +453,10 @@ function renderDolibarr(el) {
     for (const t of p.times) {
       const [label, cls] = ACTIONS[t.action] || [t.action, ""];
       const showOld = t.old && (t.action === "update" || t.action === "locked_diff");
-      html += `<tr><td class="nowrap"><span class="tag ${cls}">${esc(label)}</span>${t.hint ? `<span class="old">${esc(t.hint)}</span>` : ""}</td>
+      const changes = t.action === "update" && t.changes && t.changes.length ? `<span class="old">${esc(t.changes.join(", "))}</span>` : "";
+      const productNote = showOld && t.changes && t.changes.includes("Produkt")
+        ? `<span class="old">Produkt in Dolibarr: ${esc(t.old.product_id ? `ID ${t.old.product_id}` : "keins")}</span>` : "";
+      html += `<tr><td class="nowrap"><span class="tag ${cls}">${esc(label)}</span>${changes}${t.hint ? `<span class="old">${esc(t.hint)}</span>` : ""}${productNote}</td>
         <td class="nowrap">${fmtDate(t.date)}</td>
         <td class="num">${duration(t)}${showOld && t.old.hm !== t.hm ? `<span class="old">Dolibarr: ${esc(t.old.hm)}</span>` : ""}</td>
         <td>${t.task_id ? link(t.url, t.target_label) : esc(t.target_label)}</td>
@@ -504,7 +508,8 @@ function renderSettings(el) {
   if (c) {
     const sys = (name, label) => c[name].ok
       ? `<li>${label}: <span class="tag ok">verbunden</span> als ${esc(c[name].user)}${
-        c[name].booking_user ? `, Zeiten werden gebucht auf <strong>${esc(c[name].booking_user)}</strong>` : ""}</li>`
+        c[name].booking_user ? `, Zeiten werden gebucht auf <strong>${esc(c[name].booking_user)}</strong>` : ""}${
+        name === "dolibarr" ? `, Produkt: <strong>${esc(c[name].product || "keins")}</strong>` : ""}</li>`
       : `<li>${label}: <span class="tag bad">Fehler</span> ${esc(c[name].error)}</li>`;
     html += `<ul>${sys("youtrack", "YouTrack")}${sys("dolibarr", "Dolibarr")}</ul>`;
     html += c.config.length

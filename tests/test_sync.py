@@ -313,7 +313,7 @@ def test_ohne_benutzer_api_benutzer(client, con_only, dolibarr):
     plan = preview(client)
     assert plan["booking_user"] == {"id": None, "login": None}
     apply(client, plan)
-    assert all(c[-1] == 0 for c in dolibarr.calls if c[0] == "add_time")
+    assert all(c[5] == 0 for c in dolibarr.calls if c[0] == "add_time")
 
 
 def test_unbekannter_benutzer_sperrt_uebertragung(tmp_path, youtrack, dolibarr):
@@ -347,3 +347,82 @@ def test_verbindungstest_zeigt_buchungsbenutzer(tmp_path, youtrack, dolibarr):
     client = make_client(tmp_path, youtrack, dolibarr, dolibarr_user_id=2)
     check = client.post("/api/check", json={}).get_json()
     assert check["dolibarr"]["booking_user"] == "m.muster"
+
+
+
+# ------------------------------------------------------------ Dolibarr-Produkt
+
+def test_buchung_mit_produkt(tmp_path, youtrack, dolibarr):
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_product_id=5)
+    plan = preview(client)
+    assert plan["product"] == {"id": 5, "label": "DL-BERATUNG – Beratung (Stunde)"}
+    apply(client, plan)
+    assert {t["product_id"] for t in dolibarr.times.values()} == {5}
+    assert {t["action"] for t in preview(client)["times"]} == {"unchanged"}
+
+
+def test_ohne_produkt(client, con_only, dolibarr):
+    plan = preview(client)
+    assert plan["product"] == {"id": None, "label": None}
+    apply(client, plan)
+    assert {t["product_id"] for t in dolibarr.times.values()} == {None}
+
+
+def test_abweichendes_produkt_wird_korrigiert(tmp_path, youtrack, dolibarr):
+    # Erst ohne Produkt übertragen (wie vor der Konfiguration), eine Buchung fakturieren
+    first = make_client(tmp_path / "a", youtrack, dolibarr)
+    apply(first, preview(first))
+    invoiced_id = next(iter(dolibarr.times))
+    dolibarr.invoice(invoiced_id)
+
+    # Gleiche Datenbank, jetzt mit Produkt
+    from app.web import create_app
+
+    from .conftest import make_config
+
+    app = create_app(make_config(tmp_path / "a", dolibarr_product_id=5), youtrack=youtrack, dolibarr=dolibarr)
+    client = app.test_client()
+    plan = preview(client)
+    updates = [t for t in plan["times"] if t["action"] == "update"]
+    assert updates and all(t["changes"] == ["Produkt"] for t in updates)
+    locked = [t for t in plan["times"] if t.get("time_id") == invoiced_id]
+    assert locked[0]["action"] == "locked"  # fakturiert: nie anfassen, keine Warnung nur wegen Produkt
+    assert not any("fakturiert" in w["text"] for w in plan["warnings"])
+
+    apply(client, plan)
+    assert dolibarr.times[invoiced_id]["product_id"] is None
+    assert dolibarr.times[invoiced_id]["invoiced"] is True
+    others = [t for i, t in dolibarr.times.items() if i != invoiced_id]
+    assert {t["product_id"] for t in others} == {5}
+    assert {t["action"] for t in preview(client)["times"]} == {"unchanged", "locked"}
+
+
+def test_unbekanntes_produkt_sperrt_uebertragung(tmp_path, youtrack, dolibarr):
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_product_id=99)
+    plan = preview(client)
+    assert plan["blocked"] and not plan["pending"]
+    assert apply(client, plan).status_code == 409
+    assert dolibarr.calls == []
+    check = client.post("/api/check", json={}).get_json()
+    assert "Dolibarr-Produkt 99 (ZEITBUCH_DOLIBARR_PRODUCT_ID) existiert nicht – es wird nichts gebucht" in check["config"]
+
+
+def test_produkt_nicht_pruefbar_ohne_recht(tmp_path, youtrack, dolibarr):
+    from app.backends import BackendError
+
+    def forbidden(product_id):
+        raise BackendError("Dolibarr verweigert den Zugriff (HTTP 403)", 403)
+
+    dolibarr.product = forbidden
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_product_id=5)
+    plan = preview(client)
+    assert not plan["blocked"] and plan["pending"]
+    assert any("Recht „Produkte lesen“" in w["text"] for w in plan["warnings"])
+    apply(client, plan)
+    assert {t["product_id"] for t in dolibarr.times.values()} == {5}
+
+
+def test_verbindungstest_zeigt_produkt(tmp_path, youtrack, dolibarr):
+    client = make_client(tmp_path, youtrack, dolibarr, dolibarr_product_id=5)
+    check = client.post("/api/check", json={}).get_json()
+    assert check["dolibarr"]["product"] == "DL-BERATUNG – Beratung (Stunde)"

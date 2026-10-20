@@ -2,7 +2,7 @@
 
 Stand: 20.10.2026 · Status: umgesetzt · Name der App/des Repos: `zeitbuch`
 
-Änderungen nach der ersten Umsetzung (20.10.2026): Bebuchbar an Projekt und Position, verschachtelte Positionen, Ziel ist immer der nächste Abrechnungsknoten, Abstimmung optional (3.1, 3.3, 5.1–5.3, 7.1); Dolibarr-Benutzer für Zeitbuchungen (7.2, 8, 12.3); Abrechenbarkeit als Work-Item-Attribut statt Arbeitstyp (3.4, 3.5, 5.1, 8.1, 9).
+Änderungen nach der ersten Umsetzung (20.10.2026): Bebuchbar an Projekt und Position, verschachtelte Positionen, Ziel ist immer der nächste Abrechnungsknoten, Abstimmung optional (3.1, 3.3, 5.1–5.3, 7.1); Dolibarr-Benutzer für Zeitbuchungen (7.2, 8, 12.3); Abrechenbarkeit als Work-Item-Attribut statt Arbeitstyp (3.4, 3.5, 5.1, 8.1, 9); Dolibarr-Produkt für alle Zeitbuchungen (7.2, 8, 12.3).
 
 > Dieses Dokument liegt in einem **öffentlichen** Repository. Alle Beispiele (Kunden, Projektnummern, Positionen) sind fiktiv. Echte Kunden- und Projektdaten gehören nicht ins Repo – weder in Doku noch in Testdaten.
 
@@ -204,6 +204,7 @@ Dolibarr-Projekt (Auftraggeber)            ← Mapping in der App
 - Eine Zeitbuchung **je Tag und Ziel**, auf der gespiegelten Aufgabe (Projektebene → Aufgabe des Abrechnungsprojekts, Position → Unteraufgabe). Dauer und Notiz = die gerundete Zeile aus 5.3/5.4.
 - Gebucht wird als **abrechenbar** und **nicht fakturiert**.
 - Gebucht wird auf den Dolibarr-Benutzer `ZEITBUCH_DOLIBARR_USER_ID` (sein Stundensatz gilt); der API-Benutzer ist nur technischer Zugang. Leer = API-Benutzer. Existiert die ID nicht, meldet das die Konfigurationsprüfung und es wird nicht gebucht.
+- Jede Buchung trägt das Produkt `ZEITBUCH_DOLIBARR_PRODUCT_ID` (eine Dienstleistung, für alle Buchungen gleich); leer = kein Produkt. Es wird bei jedem Anlegen und Ändern mitgegeben, weil Dolibarr beim Ändern sonst das Produkt leert. Eigene, nicht fakturierte Buchungen mit abweichendem Produkt gelten als geändert und werden korrigiert; fakturierte bleiben unverändert. Existiert das Produkt nicht, wird nicht gebucht.
 - Übertragung nur per Button mit Vorschau (Datum, Dauer, Zielaufgabe), nie automatisch.
 - **Idempotenz:** Die App speichert je übertragenem Eintrag die Dolibarr-ID. Erneutes Übertragen erzeugt keine Duplikate, sondern aktualisiert Dauer/Notiz eigener, nicht fakturierter Einträge.
 - **Grundsatz: Die App löscht in Dolibarr nie etwas** – keine Aufgaben, keine Zeitbuchungen. Fällt eine Zeile weg (Work Item in YouTrack gelöscht oder umgehängt), zeigt die App den verwaisten Dolibarr-Eintrag als Warnung mit Link; gelöscht wird von Hand.
@@ -217,7 +218,7 @@ Dolibarr-Projekt (Auftraggeber)            ← Mapping in der App
 | System | Zugriff | Zweck |
 |---|---|---|
 | YouTrack REST-API | Permanent Token eines eigenen Benutzers mit **nur Leserechten** | Work Items je Zeitraum lesen (`/api/workItems` mit Datumsfilter – verifiziert), Tickets inkl. Parent-Kette, Type und Custom Fields, Projektfelder und Arbeitstypen für die Konfigurationsprüfung (8.1) |
-| Dolibarr REST-API | API-Key eines eigenen Benutzers, Rechte auf Projekte/Aufgaben/Zeiten, zusätzlich „Benutzer lesen“ für die Prüfung von `ZEITBUCH_DOLIBARR_USER_ID` | Aufgaben anlegen/umbenennen, Zeitbuchungen anlegen/ändern/lesen |
+| Dolibarr REST-API | API-Key eines eigenen Benutzers, Rechte auf Projekte/Aufgaben/Zeiten, zusätzlich „Benutzer lesen“ und „Produkte lesen“ für die Prüfung von `ZEITBUCH_DOLIBARR_USER_ID` und `ZEITBUCH_DOLIBARR_PRODUCT_ID` | Aufgaben anlegen/umbenennen, Zeitbuchungen anlegen/ändern/lesen |
 | Externe Systeme | keiner | – |
 
 Secrets ausschließlich per Umgebungsvariablen im Dockge-Stack – nie im Image, nie im Repo. Im Repo nur `.env.example` mit Platzhaltern.
@@ -272,6 +273,7 @@ UI, Doku und Fehlermeldungen auf Deutsch. Kein Schreibzugriff auf YouTrack im MV
 | Bebuchbar | Steuert an Abrechnungsprojekt und -position, ob direkt dorthin gebucht werden darf. Kein Ausweichen auf den nächsthöheren Knoten. |
 | Abstimmung | Optional. Höchstens eine Abstimmungsposition je Abrechnungsprojekt; ohne sie werden Besprechungen wie Umsetzung gebucht. |
 | Dolibarr-Benutzer | Zeiten werden auf `ZEITBUCH_DOLIBARR_USER_ID` gebucht; der API-Benutzer ist nur technischer Zugang. |
+| Dolibarr-Produkt | Eine Konstante `ZEITBUCH_DOLIBARR_PRODUCT_ID` für alle Buchungen. |
 | Positionen bei Direktkunden | Möglich, aber optional. Ohne Ext-Projekt keine Anzeige für externe Systeme, nur Dolibarr-Buchungen. |
 | Übergang | Fließend, kein Stichtag. Ab sofort Zeiten in YouTrack statt direkt in Dolibarr erfassen. Bisherige Aufgaben und Zeiten in Dolibarr bleiben unangetastet; die App legt ihre Struktur daneben an. **Nichts wird gelöscht.** Hinweis: Dieselbe Zeit nicht zusätzlich von Hand in Dolibarr buchen – die App sieht manuelle Einträge nicht. |
 | Erfassung per Assistent | Gewünscht: Ein Assistent (Claude über die YouTrack-Anbindung) legt Work Items aus Stichpunkten an. Das passiert **außerhalb von zeitbuch** direkt in YouTrack; zeitbuch selbst schreibt weiterhin nicht nach YouTrack und behandelt diese Work Items wie alle anderen. |
@@ -308,7 +310,7 @@ Vorlage für Aufbau, Container und CI ist **vmdash** (github.com/maxkhl/vmdash) 
 
 - Basis `debian:trixie-slim`, unprivilegierter Benutzer, `EXPOSE 8000`, `VOLUME /data`, `HEALTHCHECK` auf `/healthz`.
 - Build-Arg `VERSION` (Short-SHA) → Env-Variable, in der UI sichtbar.
-- Konfiguration nur über Env-Variablen mit App-Präfix, z. B. `ZEITBUCH_PORT`, `ZEITBUCH_DB`, `ZEITBUCH_YOUTRACK_URL`, `ZEITBUCH_YOUTRACK_TOKEN`, `ZEITBUCH_DOLIBARR_URL`, `ZEITBUCH_DOLIBARR_KEY`, `ZEITBUCH_DOLIBARR_USER_ID`, dazu die Feldkonfiguration aus 8.1. Alle Variablen mit Default und Bedeutung in README und `.env.example`.
+- Konfiguration nur über Env-Variablen mit App-Präfix, z. B. `ZEITBUCH_PORT`, `ZEITBUCH_DB`, `ZEITBUCH_YOUTRACK_URL`, `ZEITBUCH_YOUTRACK_TOKEN`, `ZEITBUCH_DOLIBARR_URL`, `ZEITBUCH_DOLIBARR_KEY`, `ZEITBUCH_DOLIBARR_USER_ID`, `ZEITBUCH_DOLIBARR_PRODUCT_ID`, dazu die Feldkonfiguration aus 8.1. Alle Variablen mit Default und Bedeutung in README und `.env.example`.
 
 ### 12.4 GitHub Actions
 

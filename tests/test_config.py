@@ -62,6 +62,15 @@ def test_dolibarr_user_id(monkeypatch):
         Config(dolibarr_user_id=-1).validate()
 
 
+def test_dolibarr_product_id(monkeypatch):
+    monkeypatch.setenv("ZEITBUCH_DOLIBARR_PRODUCT_ID", "")
+    assert Config.from_env().dolibarr_product_id == 0
+    monkeypatch.setenv("ZEITBUCH_DOLIBARR_PRODUCT_ID", "12")
+    assert Config.from_env().dolibarr_product_id == 12
+    with pytest.raises(ValueError, match="ZEITBUCH_DOLIBARR_PRODUCT_ID"):
+        Config(dolibarr_product_id=-3).validate()
+
+
 def test_ganze_zahl(monkeypatch):
     monkeypatch.setenv("ZEITBUCH_PORT", "abc")
     with pytest.raises(ValueError, match="ganze Zahl"):

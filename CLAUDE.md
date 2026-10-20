@@ -67,6 +67,10 @@ UI, Doku und Fehlermeldungen sind auf Deutsch.
 - Gebucht wird auf `ZEITBUCH_DOLIBARR_USER_ID` (0 = API-Benutzer). Dolibarr prüft
   die ID nicht → zeitbuch prüft per `GET /users/{id}`; unbekannt = Übertragen
   gesperrt, 403 (Recht fehlt) = nur Warnung.
+- Produkt `ZEITBUCH_DOLIBARR_PRODUCT_ID` bei **jedem** addtimespent und PUT
+  mitgeben: PUT ohne `product_id` leert `fk_product`. Prüfung wie beim Benutzer
+  (`GET /products/{id}`, Recht „Produkte lesen“ auch für Dienstleistungen).
+  Abweichendes Produkt an eigener, nicht fakturierter Buchung = „update“.
 - Übertragen berechnet die Vorschau neu und vergleicht den Fingerprint; bei
   Abweichung 409 statt etwas anderes auszuführen als angezeigt.
 

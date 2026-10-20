@@ -79,6 +79,7 @@ ENV_ATTRS = {
     "dolibarr_url": "ZEITBUCH_DOLIBARR_URL",
     "dolibarr_key": "ZEITBUCH_DOLIBARR_KEY",
     "dolibarr_user_id": "ZEITBUCH_DOLIBARR_USER_ID",
+    "dolibarr_product_id": "ZEITBUCH_DOLIBARR_PRODUCT_ID",
     "http_timeout": "ZEITBUCH_HTTP_TIMEOUT",
 }
 
@@ -96,6 +97,8 @@ class Config:
     dolibarr_key: str = ""
     # Dolibarr-Benutzer, auf den gebucht wird; 0 = API-Benutzer
     dolibarr_user_id: int = 0
+    # Produkt (Dienstleistung) für alle Buchungen; 0 = kein Produkt
+    dolibarr_product_id: int = 0
     http_timeout: int = 20
     yt: FieldConfig = field(default_factory=FieldConfig)
 
@@ -111,6 +114,7 @@ class Config:
             dolibarr_url=_env("ZEITBUCH_DOLIBARR_URL", "").rstrip("/"),
             dolibarr_key=_env("ZEITBUCH_DOLIBARR_KEY", ""),
             dolibarr_user_id=_env_int("ZEITBUCH_DOLIBARR_USER_ID", 0),
+            dolibarr_product_id=_env_int("ZEITBUCH_DOLIBARR_PRODUCT_ID", 0),
             http_timeout=_env_int("ZEITBUCH_HTTP_TIMEOUT", 20),
             yt=FieldConfig.from_env(),
         )
@@ -124,6 +128,8 @@ class Config:
             raise ValueError("ZEITBUCH_PORT muss zwischen 1 und 65535 liegen")
         if self.dolibarr_user_id < 0:
             raise ValueError("ZEITBUCH_DOLIBARR_USER_ID muss eine positive ID sein (leer = API-Benutzer)")
+        if self.dolibarr_product_id < 0:
+            raise ValueError("ZEITBUCH_DOLIBARR_PRODUCT_ID muss eine positive ID sein (leer = kein Produkt)")
         if not 1 <= self.http_timeout <= 300:
             raise ValueError("ZEITBUCH_HTTP_TIMEOUT muss zwischen 1 und 300 Sekunden liegen")
         for name, url in (("ZEITBUCH_YOUTRACK_URL", self.youtrack_url),

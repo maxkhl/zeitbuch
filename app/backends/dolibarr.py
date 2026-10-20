@@ -4,6 +4,7 @@ Befunde zur API stehen in docs/api-verifikation.md. Kurz:
 - addtimespent liefert keine ID → Vorher/Nachher-Vergleich der Zeilen.
 - Fakturiert (invoice_id) gibt es nur im Einzelabruf getTimeSpent.
 - PUT timespent setzt invoice_id zurück → nur nicht fakturierte Buchungen ändern.
+- PUT timespent setzt fk_product aus dem Aufruf → Produkt immer mitgeben.
 
 Es gibt bewusst keine Methode zum Löschen.
 """
@@ -106,6 +107,13 @@ class Dolibarr(DolibarrBase):
             return None
         return {"id": _int(u.get("id")), "login": u.get("login") or ""}
 
+    def product(self, product_id):
+        """Produkt oder None. Braucht das Recht „Produkte lesen“ – auch für Dienstleistungen."""
+        p = self._request("GET", f"/products/{product_id}", not_found_ok=True)
+        if not p:
+            return None
+        return {"id": _int(p.get("id")), "ref": p.get("ref") or "", "label": p.get("label") or ""}
+
     def project(self, project_id):
         p = self._request("GET", f"/projects/{project_id}", not_found_ok=True)
         if not p:
@@ -143,14 +151,23 @@ class Dolibarr(DolibarrBase):
         return {"id": time_id, "task_id": task_id,
                 "seconds": _int(raw.get("element_duration")) or 0,
                 "note": (raw.get("note_private") or raw.get("note") or "").strip(),
+                "product_id": _int(raw.get("fk_product")) or None,
                 "invoiced": _invoiced(raw)}
 
-    def add_time(self, task_id, day, seconds, note, user_id=0):
-        """user_id 0 = API-Benutzer."""
+    @staticmethod
+    def _time_body(day, seconds, note, user_id, product_id):
+        body = {"date": f"{day} {BOOKING_TIME}", "duration": seconds, "user_id": user_id, "note": note}
+        # Ohne product_id setzt Dolibarr das Produkt auf leer (auch beim PUT)
+        if product_id:
+            body["product_id"] = product_id
+        return body
+
+    def add_time(self, task_id, day, seconds, note, user_id=0, product_id=0):
+        """user_id 0 = API-Benutzer, product_id 0 = kein Produkt."""
         with self._add_lock:
             before = self.time_ids(task_id)
-            self._request("POST", f"/tasks/{task_id}/addtimespent", json={
-                "date": f"{day} {BOOKING_TIME}", "duration": seconds, "user_id": user_id, "note": note})
+            self._request("POST", f"/tasks/{task_id}/addtimespent",
+                          json=self._time_body(day, seconds, note, user_id, product_id))
             new = self.time_ids(task_id) - before
         if len(new) != 1:
             raise BackendError(
@@ -159,10 +176,10 @@ class Dolibarr(DolibarrBase):
                 "Zeile erst wieder, wenn das geklärt ist.")
         return new.pop()
 
-    def update_time(self, task_id, time_id, day, seconds, note, user_id=0):
-        """user_id 0 = Benutzer der Buchung bleibt unverändert."""
-        self._request("PUT", f"/tasks/{task_id}/timespent/{time_id}", json={
-            "date": f"{day} {BOOKING_TIME}", "duration": seconds, "user_id": user_id, "note": note})
+    def update_time(self, task_id, time_id, day, seconds, note, user_id=0, product_id=0):
+        """user_id 0 = Benutzer bleibt unverändert; product_id 0 = Produkt wird geleert."""
+        self._request("PUT", f"/tasks/{task_id}/timespent/{time_id}",
+                      json=self._time_body(day, seconds, note, user_id, product_id))
 
 
 class MockDolibarr(DolibarrBase):
@@ -179,6 +196,8 @@ class MockDolibarr(DolibarrBase):
             2: {"id": 2, "ref": "PJ2601-0002", "title": "Beispiel Systemhaus – Betreuung"},
         }
         self.users = {1: {"id": 1, "login": "api-zeitbuch"}, 2: {"id": 2, "login": "m.muster"}}
+        self.products = {5: {"id": 5, "ref": "DL-BERATUNG", "label": "Beratung (Stunde)"},
+                         6: {"id": 6, "ref": "DL-SUPPORT", "label": "Support (Stunde)"}}
         self.tasks = {}  # id → dict
         self.times = {}  # id → dict
         self.calls = []  # für Tests: (Methode, Argumente)
@@ -191,6 +210,9 @@ class MockDolibarr(DolibarrBase):
 
     def user(self, user_id):
         return self.users.get(user_id)
+
+    def product(self, product_id):
+        return self.products.get(product_id)
 
     def project(self, project_id):
         return self.project_list.get(project_id)
@@ -220,26 +242,27 @@ class MockDolibarr(DolibarrBase):
         t = self.times.get(time_id)
         if not t or t["task_id"] != task_id or task_id not in self.tasks:
             return None
-        return {k: t[k] for k in ("id", "task_id", "seconds", "note", "invoiced")}
+        return {k: t[k] for k in ("id", "task_id", "seconds", "note", "product_id", "invoiced")}
 
-    def add_time(self, task_id, day, seconds, note, user_id=0):
+    def add_time(self, task_id, day, seconds, note, user_id=0, product_id=0):
         with self._lock:
             if task_id not in self.tasks:
                 raise BackendError("Dolibarr-Fehler HTTP 404: Task not found", 404)
             time_id = next(self._ids)
             self.times[time_id] = {"id": time_id, "task_id": task_id, "date": day,
                                    "seconds": seconds, "note": note.strip(), "invoiced": False,
-                                   "user_id": user_id or 1}
-            self.calls.append(("add_time", task_id, day, seconds, note, user_id))
+                                   "user_id": user_id or 1, "product_id": product_id or None}
+            self.calls.append(("add_time", task_id, day, seconds, note, user_id, product_id))
             return time_id
 
-    def update_time(self, task_id, time_id, day, seconds, note, user_id=0):
+    def update_time(self, task_id, time_id, day, seconds, note, user_id=0, product_id=0):
         t = self.times[time_id]
-        # Wie Dolibarr 23: PUT setzt das Fakturiert-Kennzeichen zurück
-        t.update({"date": day, "seconds": seconds, "note": note.strip(), "invoiced": False})
+        # Wie Dolibarr 23: PUT setzt Fakturiert-Kennzeichen zurück und Produkt aus dem Aufruf
+        t.update({"date": day, "seconds": seconds, "note": note.strip(), "invoiced": False,
+                  "product_id": product_id or None})
         if user_id:
             t["user_id"] = user_id
-        self.calls.append(("update_time", task_id, time_id, day, seconds, note, user_id))
+        self.calls.append(("update_time", task_id, time_id, day, seconds, note, user_id, product_id))
 
     # Nur für Tests/Demo: Dolibarr-Seite simulieren
     def invoice(self, time_id):

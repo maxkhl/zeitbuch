@@ -60,7 +60,8 @@ class FakeDolibarrServer:
             for _ in range(1 + self.extra_on_add):
                 self.next_id += 1
                 self.times[self.next_id] = {"fk_element": task_id, "element_duration": json["duration"],
-                                            "note": json["note"], "invoice_id": None}
+                                            "note": json["note"], "invoice_id": None,
+                                            "fk_product": json.get("product_id")}
             # Wie Dolibarr 23: keine ID in der Antwort
             return FakeResponse(200, {"success": {"code": 200, "message": "Time spent added"}})
         if parts[2] == "getTimeSpent":
@@ -69,10 +70,13 @@ class FakeDolibarrServer:
                 return FakeResponse(404, {"error": {"code": 404, "message": "Timespent not found"}})
             return FakeResponse(200, {"id": parts[3], "fk_element": str(t["fk_element"]),
                                       "element_duration": str(t["element_duration"]),
-                                      "note_private": t["note"], "invoice_id": t["invoice_id"]})
+                                      "note_private": t["note"], "invoice_id": t["invoice_id"],
+                                      "fk_product": t["fk_product"]})
         if parts[2] == "timespent" and method == "PUT":
             t = self.times[int(parts[3])]
-            t.update(element_duration=json["duration"], note=json["note"], invoice_id=None)
+            # Wie Dolibarr 23.0.2: invoice_id wird leer, fk_product kommt unbedingt aus dem Aufruf
+            t.update(element_duration=json["duration"], note=json["note"], invoice_id=None,
+                     fk_product=json.get("product_id"))
             return FakeResponse(200, {"success": {"code": 200}})
         raise AssertionError(f"unerwartet: {method} {path}")
 
@@ -120,7 +124,8 @@ def test_zeit_anlegen_ermittelt_id_per_vergleich(doli, server):
     post = [c for c in server.calls if c[1].endswith("addtimespent")][0]
     assert post[2] == {"date": "2026-09-01 12:00:00", "duration": 4500, "user_id": 0, "note": "Mapping"}
     entry = doli.time_entry(7, first)
-    assert entry == {"id": first, "task_id": 7, "seconds": 4500, "note": "Mapping", "invoiced": False}
+    assert entry == {"id": first, "task_id": 7, "seconds": 4500, "note": "Mapping", "product_id": None,
+                     "invoiced": False}
 
 
 def test_zeit_anlegen_auf_anderen_benutzer(doli, server):
@@ -218,3 +223,37 @@ def test_403_mit_meldung(doli, server):
         403, {"error": {"code": 403, "message": "Access not allowed for login api"}})
     with pytest.raises(BackendError, match="Rechte prüfen: Access not allowed for login api"):
         doli.task(7)
+
+
+def test_produkt_beim_anlegen_und_aendern_immer_mitgeben(doli, server):
+    tid = doli.add_time(7, "2026-09-01", 900, "x", product_id=5)
+    post = [c for c in server.calls if c[1].endswith("addtimespent")][-1]
+    assert post[2]["product_id"] == 5
+    assert doli.time_entry(7, tid)["product_id"] == 5
+    doli.update_time(7, tid, "2026-09-01", 1800, "y", product_id=5)
+    assert server.calls[-1][2]["product_id"] == 5
+    assert doli.time_entry(7, tid)["product_id"] == 5
+
+
+def test_put_ohne_produkt_leert_produkt(doli, server):
+    """Dokumentiert das Dolibarr-Verhalten, wegen dem zeitbuch das Produkt immer mitgibt."""
+    tid = doli.add_time(7, "2026-09-01", 900, "x", product_id=5)
+    doli.update_time(7, tid, "2026-09-01", 900, "x")
+    assert "product_id" not in server.calls[-1][2]
+    assert doli.time_entry(7, tid)["product_id"] is None
+
+
+def test_produkt_lesen(doli, server):
+    def handler(method, url, params=None, json=None, timeout=None):
+        if url.endswith("/products/5"):
+            return FakeResponse(200, {"id": "5", "ref": "DL-BERATUNG", "label": "Beratung"})
+        if url.endswith("/products/6"):
+            return FakeResponse(404, {"error": {"code": 404, "message": "Product not found"}})
+        return FakeResponse(403, {"error": {"code": 403, "message": "Forbidden"}})
+
+    server.request = handler
+    assert doli.product(5) == {"id": 5, "ref": "DL-BERATUNG", "label": "Beratung"}
+    assert doli.product(6) is None
+    with pytest.raises(BackendError) as e:
+        doli.product(7)
+    assert e.value.status == 403

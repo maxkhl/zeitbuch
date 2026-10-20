@@ -36,24 +36,44 @@ def _warn(text, url=None, level="warn"):
     return {"text": text, "url": url, "level": level}
 
 
-def check_booking_user(doli, user_id):
-    """→ (Login oder None, Meldung oder None, blockiert). user_id 0 = API-Benutzer."""
-    if not user_id:
+def check_reference(fetch, ref_id, var, what, right):
+    """Prüft eine konfigurierte Dolibarr-ID (Benutzer, Produkt).
+
+    → (Objekt oder None, Meldung oder None, blockiert). ref_id 0 = nicht konfiguriert.
+    Fehlt das Leserecht (403), ist die ID nicht prüfbar – gebucht wird trotzdem;
+    existiert sie nicht, wird das Übertragen gesperrt (Dolibarr selbst prüft sie nicht).
+    """
+    if not ref_id:
         return None, None, False
     try:
-        user = doli.user(user_id)
+        obj = fetch(ref_id)
     except BackendError as e:
         if e.status == 403:
-            return None, (f"Dolibarr-Benutzer {user_id} (ZEITBUCH_DOLIBARR_USER_ID) nicht prüfbar: "
-                          "dem API-Benutzer fehlt das Recht „Benutzer lesen“"), False
+            return None, (f"{what} {ref_id} ({var}) nicht prüfbar: dem API-Benutzer fehlt das "
+                          f"Recht „{right}“"), False
         raise
-    if user is None:
-        return None, (f"Dolibarr-Benutzer {user_id} (ZEITBUCH_DOLIBARR_USER_ID) existiert nicht – "
-                      "es wird nichts gebucht"), True
-    return user["login"], None, False
+    if obj is None:
+        return None, f"{what} {ref_id} ({var}) existiert nicht – es wird nichts gebucht", True
+    return obj, None, False
 
 
-def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0):
+def check_booking_user(doli, user_id):
+    user, msg, blocked = check_reference(doli.user, user_id, "ZEITBUCH_DOLIBARR_USER_ID",
+                                         "Dolibarr-Benutzer", "Benutzer lesen")
+    return (user["login"] if user else None), msg, blocked
+
+
+def check_booking_product(doli, product_id):
+    """Recht „Produkte lesen“ ist auch für Dienstleistungen nötig (api_products prüft produit->lire)."""
+    return check_reference(doli.product, product_id, "ZEITBUCH_DOLIBARR_PRODUCT_ID",
+                           "Dolibarr-Produkt", "Produkte lesen")
+
+
+def product_label(product):
+    return f"{product['ref']} – {product['label']}" if product else None
+
+
+def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0, product_id=0):
     """Vorschau für einen Monat. Liest Dolibarr, schreibt nichts."""
     res = Resolver(issues, yt)
     mapping = {p["short_name"]: p["dolibarr_project_id"] for p in db.projects()}
@@ -61,9 +81,14 @@ def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0):
     warnings = []
     forget_tasks, forget_times = set(), set()
 
-    booking_user, user_msg, blocked = check_booking_user(doli, user_id)
+    booking_user, user_msg, user_blocked = check_booking_user(doli, user_id)
     if user_msg:
-        warnings.append(_warn(user_msg, level="error" if blocked else "warn"))
+        warnings.append(_warn(user_msg, level="error" if user_blocked else "warn"))
+    product, product_msg, product_blocked = check_booking_product(doli, product_id)
+    if product_msg:
+        warnings.append(_warn(product_msg, level="error" if product_blocked else "warn"))
+    blocked = user_blocked or product_blocked
+    want_product = product_id or None
 
     # --- gemappte Dolibarr-Projekte prüfen
     doli_projects = {}
@@ -213,17 +238,25 @@ def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0):
             item["action"] = "create"
         else:
             item.update(time_id=entry["id"], old={**_dur(entry["seconds"]), "seconds": entry["seconds"],
-                                                   "note": entry["note"]})
-            same = entry["seconds"] == seconds and entry["note"] == note
+                                                   "note": entry["note"],
+                                                   "product_id": entry.get("product_id")})
+            changes = [name for name, differs in (
+                ("Dauer", entry["seconds"] != seconds),
+                ("Notiz", entry["note"] != note),
+                ("Produkt", entry.get("product_id") != want_product)) if differs]
+            item["changes"] = changes
             if entry["invoiced"]:
-                item["action"] = "locked" if same else "locked_diff"
-                if not same:
+                # Fakturiert: nie anfassen. Nur abweichende Dauer/Notiz sind eine Warnung wert;
+                # ein abweichendes Produkt bleibt, wie es fakturiert wurde.
+                content = [c for c in changes if c != "Produkt"]
+                item["action"] = "locked_diff" if content else "locked"
+                if content:
                     warnings.append(_warn(
                         f"{row.date.isoformat()} {row.target}: Buchung ist fakturiert, weicht aber "
-                        f"von YouTrack ab ({_dur(entry['seconds'])['hm']} → {_dur(seconds)['hm']}) – "
-                        "wird nicht geändert", item["url"]))
+                        f"von YouTrack ab ({', '.join(content)}; {_dur(entry['seconds'])['hm']} → "
+                        f"{_dur(seconds)['hm']}) – wird nicht geändert", item["url"]))
             else:
-                item["action"] = "unchanged" if same else "update"
+                item["action"] = "update" if changes else "unchanged"
         times.append(item)
 
     # Verwaiste Buchungen: gespeichert, aber keine Zeile mehr dazu
@@ -262,6 +295,7 @@ def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0):
         },
     }
     plan["booking_user"] = {"id": user_id or None, "login": booking_user}
+    plan["product"] = {"id": want_product, "label": product_label(product)}
     plan["blocked"] = blocked
     plan["fingerprint"] = fingerprint(plan)
     plan["pending"] = not blocked and bool(
@@ -280,18 +314,20 @@ def fingerprint(plan):
         "r": [(r["yt_issue"], r["new"]) for r in plan["tasks_rename"]],
         "t": [(t["key"], t["action"], t["seconds"], t["note"]) for t in plan["times"]
               if t["action"] in ("create", "update")],
+        "p": plan["product"]["id"],
     }
     return hashlib.sha256(json.dumps(actions, sort_keys=True).encode()).hexdigest()[:16]
 
 
-def apply_plan(plan, db, doli, expected_fingerprint, user_id=0):
+def apply_plan(plan, db, doli, expected_fingerprint, user_id=0, product_id=0):
     """Führt eine frisch berechnete Vorschau aus. Jeder Schritt wird sofort gespeichert,
     damit ein Abbruch beim nächsten Übertragen sauber weiterläuft."""
     if plan["fingerprint"] != expected_fingerprint:
         raise StalePlan("Die Vorschau ist veraltet – YouTrack oder Dolibarr haben sich seitdem "
                         "geändert. Bitte Vorschau neu laden und erneut prüfen.")
     if plan["blocked"]:
-        raise SyncError("Übertragung gesperrt – siehe Warnungen (ZEITBUCH_DOLIBARR_USER_ID)")
+        raise SyncError("Übertragung gesperrt – siehe Warnungen "
+                        "(ZEITBUCH_DOLIBARR_USER_ID / ZEITBUCH_DOLIBARR_PRODUCT_ID)")
     if not _apply_lock.acquire(blocking=False):
         raise SyncError("Eine Übertragung läuft bereits")
     done = {"tasks_created": 0, "tasks_renamed": 0, "times_created": 0, "times_updated": 0,
@@ -322,7 +358,7 @@ def apply_plan(plan, db, doli, expected_fingerprint, user_id=0):
         for t in plan["times"]:
             if t["action"] == "create":
                 task_id = t["task_id"] or task_ids[t["target"]]
-                time_id = doli.add_time(task_id, t["date"], t["seconds"], t["note"], user_id)
+                time_id = doli.add_time(task_id, t["date"], t["seconds"], t["note"], user_id, product_id)
                 db.save_time(t["key"], t["date"], t["target"], task_id, time_id, t["seconds"], t["note"])
                 done["times_created"] += 1
             elif t["action"] == "update":
@@ -333,7 +369,8 @@ def apply_plan(plan, db, doli, expected_fingerprint, user_id=0):
                                            + ("fakturiert" if entry else "gelöscht")
                                            + " – nicht geändert")
                     continue
-                doli.update_time(t["task_id"], t["time_id"], t["date"], t["seconds"], t["note"], user_id)
+                doli.update_time(t["task_id"], t["time_id"], t["date"], t["seconds"], t["note"],
+                                 user_id, product_id)
                 db.save_time(t["key"], t["date"], t["target"], t["task_id"], t["time_id"],
                              t["seconds"], t["note"])
                 done["times_updated"] += 1
