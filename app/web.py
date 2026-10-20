@@ -18,6 +18,14 @@ log = logging.getLogger(__name__)
 
 SHORT_NAME = re.compile(r"[A-Za-z0-9_-]{1,50}")
 
+# GET /projects filtert ohne societe->client->voir auf Geschäftspartner, bei denen der
+# API-Benutzer Vertriebsmitarbeiter ist (api_projects.class.php, index()).
+NO_DOLIBARR_PROJECTS = (
+    "Dolibarr liefert keine Projekte. Meist fehlt dem API-Benutzer das Recht "
+    "„Zugriff auf alle Geschäftspartner erweitern“ (Geschäftspartner); Projektrechte "
+    "allein reichen nicht. Alternativ den API-Benutzer beim Geschäftspartner als "
+    "Vertriebsmitarbeiter eintragen. Siehe README, Einrichtung in Dolibarr.")
+
 
 class ApiError(Exception):
     def __init__(self, status, message):
@@ -215,6 +223,8 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
             "youtrack_error": lists["youtrack"][1],
             "dolibarr_projects": lists["dolibarr"][0],
             "dolibarr_error": lists["dolibarr"][1],
+            "dolibarr_hint": (NO_DOLIBARR_PROJECTS
+                              if not lists["dolibarr"][0] and not lists["dolibarr"][1] else None),
             "field_config": cfg.yt.as_list(),
         })
 

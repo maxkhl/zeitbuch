@@ -484,6 +484,7 @@ function renderSettings(el) {
   let html = `<h2>YouTrack-Projekt → Dolibarr-Projekt</h2>`;
   if (s.youtrack_error) html += `<div class="notice bad">YouTrack: ${esc(s.youtrack_error)}</div>`;
   if (s.dolibarr_error) html += `<div class="notice bad">Dolibarr: ${esc(s.dolibarr_error)}</div>`;
+  if (s.dolibarr_hint) html += `<div class="notice warn">${esc(s.dolibarr_hint)}</div>`;
   html += `<div class="table-wrap"><table><thead><tr><th>YouTrack-Projekt</th><th>Dolibarr-Projekt</th><th></th></tr></thead><tbody>`;
   if (!s.projects.length) html += `<tr><td colspan="3" class="muted">Noch keine Projekte.</td></tr>`;
   for (const p of s.projects) {

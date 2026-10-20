@@ -170,12 +170,23 @@ Projekteinstellungen (Felder, Arbeitstypen) der eingerichteten Projekte.
 
 ## Einrichtung in Dolibarr
 
-- Version 23, Module **Projekte** mit Aufgaben und **API** aktiv.
+- Version **23.0.4 oder neuer**, Module **Projekte** mit Aufgaben und **API**
+  aktiv. In 23.0.2 und 23.0.3 bricht `POST /tasks/{id}/addtimespent` mit HTTP
+  500 ab (PHP Fatal „Illegal offset type in isset or empty“ in Restler); ohne
+  Update muss der Docblock gepatcht werden, siehe
+  [docs/api-verifikation.md](docs/api-verifikation.md#dolibarr-2302-und-2303-addtimespent-endet-mit-http-500).
 - In jedem Dolibarr-Projekt eines Auftraggebers **„Zeit abrechnen“ aktivieren**
   (Projektkarte → Ändern). zeitbuch stellt das nicht selbst ein.
 - Eigener technischer Benutzer für zeitbuch mit API-Key. Rechte:
   - Projekte: lesen und anlegen/ändern (**kein** Löschen nötig), Zugriff auf die
     betroffenen Projekte (Recht „alle Projekte“ oder als Kontakt eingetragen),
+  - Geschäftspartner: **„Zugriff auf alle Geschäftspartner erweitern“**
+    (`societe->client->voir`). Ohne dieses Recht liefert die Projektliste nur
+    Projekte von Geschäftspartnern, bei denen der API-Benutzer
+    Vertriebsmitarbeiter ist – Projektrechte allein reichen nicht, die Auswahl
+    in den Einstellungen bleibt sonst leer. Alternative ohne das Recht: den
+    API-Benutzer beim jeweiligen Geschäftspartner als Vertriebsmitarbeiter
+    eintragen,
   - Benutzer: lesen – nur damit die Konfigurationsprüfung
     `ZEITBUCH_DOLIBARR_USER_ID` prüfen kann.
 - `ZEITBUCH_DOLIBARR_USER_ID` auf den Benutzer setzen, auf den die Zeiten

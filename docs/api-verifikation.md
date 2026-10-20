@@ -34,6 +34,12 @@ Konfigurationsprüfung: `GET /api/admin/projects?fields=id,shortName,…`, dann
 und `/api/admin/projects/{id}/timeTrackingSettings?fields=enabled,workItemTypes(name),attributes(name,values(name))`
 (`attributes` = Liste von `WorkItemProjectAttribute` mit den möglichen `values`).
 
+> **Nachtrag nach der Inbetriebnahme:** In 23.0.2 und 23.0.3 ist `addtimespent`
+> über die API nicht nutzbar (HTTP 500), erst ab **23.0.4** behoben – siehe
+> [unten](#dolibarr-2302-und-2303-addtimespent-endet-mit-http-500). Die
+> Projektliste braucht zusätzlich ein Geschäftspartner-Recht, siehe
+> [Projektliste](#dolibarr-2302-projektliste-und-geschäftspartner-rechte).
+
 ## Dolibarr 23.0.2: Aufgaben
 
 - **Anlegen:** `POST /api/index.php/tasks` mit Pflichtfeldern `ref`, `label`,
@@ -108,3 +114,41 @@ Nachgeprüft für `ZEITBUCH_DOLIBARR_USER_ID`.
   sendet die konfigurierte ID (bzw. 0 ohne Konfiguration). Der `thm` wird beim
   Ändern nur neu bestimmt, wenn er leer ist oder `TIMESPENT_ALWAYS_UPDATE_THM`
   gesetzt ist.
+
+## Dolibarr 23.0.2 und 23.0.3: addtimespent endet mit HTTP 500
+
+Beim ersten echten Lauf gefunden und am Quelltext bestätigt; die reine
+Quelltextprüfung oben hatte es übersehen.
+
+- **Fehler:** `POST /api/index.php/tasks/{id}/addtimespent` endet mit HTTP 500,
+  PHP Fatal „Illegal offset type in isset or empty“ in
+  `htdocs/includes/restler/framework/Luracast/Restler/Data/Validator.php:427`.
+- **Ursache:** Im Docblock von `Tasks::addTimeSpent` stehen Union-Typen –
+  `@param datetime|string $date` und `@param int|null $progress`. Restler
+  übernimmt den Typ aus dem Docblock und verwendet ihn als Array-Schlüssel; ein
+  Union-Typ ist dort kein gültiger Schlüssel.
+- **Betroffen:** 23.0.2 und 23.0.3. In **23.0.4** stehen wieder einfache Typen
+  (`@param datetime $date`), der Fehler ist behoben.
+- **Abhilfe:** Dolibarr auf ≥ 23.0.4 aktualisieren. Alternativ in
+  `htdocs/projet/class/api_tasks.class.php` die beiden Docblock-Zeilen von
+  `addTimeSpent` auf `@param datetime $date` und `@param int $progress` ändern
+  (wie in 23.0.4). Den Routen-Cache (`api/temp/routes.php` im
+  Dokumentenverzeichnis) erzeugt Dolibarr standardmäßig bei jedem Aufruf neu;
+  nur wenn `API_PRODUCTION_DO_NOT_ALWAYS_REFRESH_CACHE` gesetzt ist, die Datei
+  nach dem Patch löschen.
+- **Folge für zeitbuch:** keine Codeänderung; seit dieser Inbetriebnahme zeigt
+  zeitbuch bei Antworten ohne JSON den gekürzten Antworttext in Meldung und Log,
+  sodass ein solcher PHP-Fehler direkt sichtbar ist.
+
+## Dolibarr 23.0.2: Projektliste und Geschäftspartner-Rechte
+
+- `GET /api/index.php/projects` (`api_projects.class.php`, `index()`) setzt ohne
+  das Recht `societe->client->voir` („Zugriff auf alle Geschäftspartner
+  erweitern“) einen Filter auf den Vertriebsmitarbeiter: Es kommen nur
+  Projekte von Geschäftspartnern, bei denen der API-Benutzer in
+  `llx_societe_commerciaux` eingetragen ist. Projektrechte allein reichen nicht.
+- **Abhilfe:** dem API-Benutzer das Recht „Zugriff auf alle Geschäftspartner
+  erweitern“ geben, oder ihn bei den betroffenen Geschäftspartnern als
+  Vertriebsmitarbeiter eintragen.
+- zeitbuch zeigt in den Einstellungen einen Hinweis, wenn Dolibarr eine leere
+  Projektliste liefert.

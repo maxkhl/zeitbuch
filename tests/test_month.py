@@ -128,3 +128,10 @@ def test_verbindungstest_mit_konfigurationspruefung(client, mapped):
     assert data["youtrack"] == {"ok": True, "user": "mock"}
     assert data["config"] == ["Feld „Abstimmung“ fehlt in Projekt XSYS"]
     assert client.get("/api/info").get_json()["check"]["config"] == data["config"]
+
+
+def test_hinweis_wenn_dolibarr_keine_projekte_liefert(client, dolibarr):
+    assert client.get("/api/settings").get_json()["dolibarr_hint"] is None
+    dolibarr.project_list = {}
+    hint = client.get("/api/settings").get_json()["dolibarr_hint"]
+    assert "Zugriff auf alle Geschäftspartner erweitern" in hint
