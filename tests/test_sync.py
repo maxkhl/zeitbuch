@@ -338,9 +338,10 @@ def test_benutzer_nicht_pruefbar_ohne_recht(tmp_path, youtrack, dolibarr):
     client = make_client(tmp_path, youtrack, dolibarr, dolibarr_user_id=2)
     plan = preview(client)
     assert not plan["blocked"]
-    assert any("Recht „Benutzer lesen“" in w["text"] for w in plan["warnings"])
+    assert any("Recht „Benutzer lesen“" in w["text"] and w["level"] == "info" for w in plan["warnings"])
     check = client.post("/api/check", json={}).get_json()
-    assert any("Recht „Benutzer lesen“" in m for m in check["config"])
+    assert any("Recht „Benutzer lesen“" in m for m in check["hints"])
+    assert check["config"] == []
 
 
 def test_verbindungstest_zeigt_buchungsbenutzer(tmp_path, youtrack, dolibarr):
@@ -384,7 +385,7 @@ def test_abweichendes_produkt_wird_korrigiert(tmp_path, youtrack, dolibarr):
     client = app.test_client()
     plan = preview(client)
     updates = [t for t in plan["times"] if t["action"] == "update"]
-    assert updates and all(t["changes"] == ["Produkt"] for t in updates)
+    assert updates and all(t["changes"] == ["Produkt/Leistung"] for t in updates)
     locked = [t for t in plan["times"] if t.get("time_id") == invoiced_id]
     assert locked[0]["action"] == "locked"  # fakturiert: nie anfassen, keine Warnung nur wegen Produkt
     assert not any("fakturiert" in w["text"] for w in plan["warnings"])
@@ -404,7 +405,9 @@ def test_unbekanntes_produkt_sperrt_uebertragung(tmp_path, youtrack, dolibarr):
     assert apply(client, plan).status_code == 409
     assert dolibarr.calls == []
     check = client.post("/api/check", json={}).get_json()
-    assert "Dolibarr-Produkt 99 (ZEITBUCH_DOLIBARR_PRODUCT_ID) existiert nicht – es wird nichts gebucht" in check["config"]
+    assert ("Dolibarr-Produkt/Leistung 99 (ZEITBUCH_DOLIBARR_PRODUCT_ID) existiert nicht – "
+            "es wird nichts gebucht") in check["config"]
+    assert check["hints"] == []
 
 
 def test_produkt_nicht_pruefbar_ohne_recht(tmp_path, youtrack, dolibarr):
@@ -417,7 +420,16 @@ def test_produkt_nicht_pruefbar_ohne_recht(tmp_path, youtrack, dolibarr):
     client = make_client(tmp_path, youtrack, dolibarr, dolibarr_product_id=5)
     plan = preview(client)
     assert not plan["blocked"] and plan["pending"]
-    assert any("Recht „Produkte lesen“" in w["text"] for w in plan["warnings"])
+    (hint,) = [w for w in plan["warnings"] if "Produkte lesen" in w["text"]]
+    assert hint["level"] == "info"
+    assert hint["text"] == ("Dolibarr-Produkt/Leistung 5 (ZEITBUCH_DOLIBARR_PRODUCT_ID) nicht prüfbar: "
+                            "dem API-Benutzer fehlt das Recht „Produkte lesen“ („Leistungen einsehen“ "
+                            "allein reicht nicht) – gebucht wird trotzdem")
+    # Neutraler Hinweis: nicht im Banner (config), die Ampel bleibt davon unberührt
+    check = client.post("/api/check", json={}).get_json()
+    assert check["hints"] == [hint["text"]]
+    assert check["config"] == []
+    assert client.get("/api/info").get_json()["check"]["config"] == []
     apply(client, plan)
     assert {t["product_id"] for t in dolibarr.times.values()} == {5}
 

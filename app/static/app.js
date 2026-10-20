@@ -422,12 +422,15 @@ function renderDolibarr(el) {
     <button class="btn primary" type="button" data-action="apply" ${p.pending ? "" : "disabled"}>Nach Dolibarr übertragen</button>
     <button class="btn" type="button" data-action="preview">Vorschau neu laden</button>
     <span class="muted">${p.booking_user.id ? `Buchung auf ${esc(p.booking_user.login || `Benutzer ${p.booking_user.id}`)} · ` : "Buchung auf den API-Benutzer · "}${
-      p.product.id ? `Produkt ${esc(p.product.label || `ID ${p.product.id}`)} · ` : "ohne Produkt · "}${c.create_tasks} Aufgabe(n) neu, ${c.rename_tasks} Umbenennung(en), ${c.create} Buchung(en) neu,
+      p.product.id ? `Produkt/Leistung ${esc(p.product.label || `ID ${p.product.id}`)} · ` : "ohne Produkt/Leistung · "}${c.create_tasks} Aufgabe(n) neu, ${c.rename_tasks} Umbenennung(en), ${c.create} Buchung(en) neu,
       ${c.update} geändert, ${c.unchanged} unverändert, ${c.locked + c.locked_diff} fakturiert</span>
   </div>`;
 
-  if (p.warnings.length) {
-    html += `<h2>Warnungen</h2><ul class="warnings">${p.warnings.map((w) => `<li class="${esc(w.level)}">${esc(w.text)}${w.url ? link(w.url, "öffnen") : ""}</li>`).join("")}</ul>`;
+  // Was oben schon unter „Konfiguration prüfen“ steht, nicht noch einmal zeigen
+  const inBanner = new Set((state.info && state.info.check && state.info.check.config) || []);
+  const warnings = p.warnings.filter((w) => !inBanner.has(w.text));
+  if (warnings.length) {
+    html += `<h2>Warnungen und Hinweise</h2><ul class="warnings">${warnings.map((w) => `<li class="${esc(w.level)}">${esc(w.text)}${w.url ? link(w.url, "öffnen") : ""}</li>`).join("")}</ul>`;
   }
 
   if (p.tasks_create.length || p.tasks_rename.length) {
@@ -454,8 +457,8 @@ function renderDolibarr(el) {
       const [label, cls] = ACTIONS[t.action] || [t.action, ""];
       const showOld = t.old && (t.action === "update" || t.action === "locked_diff");
       const changes = t.action === "update" && t.changes && t.changes.length ? `<span class="old">${esc(t.changes.join(", "))}</span>` : "";
-      const productNote = showOld && t.changes && t.changes.includes("Produkt")
-        ? `<span class="old">Produkt in Dolibarr: ${esc(t.old.product_id ? `ID ${t.old.product_id}` : "keins")}</span>` : "";
+      const productNote = showOld && t.changes && t.changes.includes("Produkt/Leistung")
+        ? `<span class="old">Produkt/Leistung in Dolibarr: ${esc(t.old.product_id ? `ID ${t.old.product_id}` : "keins")}</span>` : "";
       html += `<tr><td class="nowrap"><span class="tag ${cls}">${esc(label)}</span>${changes}${t.hint ? `<span class="old">${esc(t.hint)}</span>` : ""}${productNote}</td>
         <td class="nowrap">${fmtDate(t.date)}</td>
         <td class="num">${duration(t)}${showOld && t.old.hm !== t.hm ? `<span class="old">Dolibarr: ${esc(t.old.hm)}</span>` : ""}</td>
@@ -509,12 +512,15 @@ function renderSettings(el) {
     const sys = (name, label) => c[name].ok
       ? `<li>${label}: <span class="tag ok">verbunden</span> als ${esc(c[name].user)}${
         c[name].booking_user ? `, Zeiten werden gebucht auf <strong>${esc(c[name].booking_user)}</strong>` : ""}${
-        name === "dolibarr" ? `, Produkt: <strong>${esc(c[name].product || "keins")}</strong>` : ""}</li>`
+        name === "dolibarr" ? `, Produkt/Leistung: <strong>${esc(c[name].product || "keins")}</strong>` : ""}</li>`
       : `<li>${label}: <span class="tag bad">Fehler</span> ${esc(c[name].error)}</li>`;
     html += `<ul>${sys("youtrack", "YouTrack")}${sys("dolibarr", "Dolibarr")}</ul>`;
     html += c.config.length
       ? `<div class="notice warn"><strong>Konfiguration:</strong><ul>${c.config.map((m) => `<li>${esc(m)}</li>`).join("")}</ul></div>`
-      : `<div class="notice ok">Alle Felder, Werte und Arbeitstypen gefunden.</div>`;
+      : `<div class="notice ok">Keine Konfigurationsfehler.</div>`;
+    if (c.hints && c.hints.length) {
+      html += `<div class="notice info"><strong>Hinweise</strong> (sperren nichts):<ul>${c.hints.map((m) => `<li>${esc(m)}</li>`).join("")}</ul></div>`;
+    }
   }
 
   html += `<h2>Aktive Feldkonfiguration</h2><p class="muted">Nur lesend – Änderung über die Env-Variablen im Dockge-Stack.</p>

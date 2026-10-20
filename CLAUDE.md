@@ -66,10 +66,14 @@ UI, Doku und Fehlermeldungen sind auf Deutsch.
 - Datum wird als `JJJJ-MM-TT 12:00:00` (GMT) gesendet.
 - Gebucht wird auf `ZEITBUCH_DOLIBARR_USER_ID` (0 = API-Benutzer). Dolibarr prüft
   die ID nicht → zeitbuch prüft per `GET /users/{id}`; unbekannt = Übertragen
-  gesperrt, 403 (Recht fehlt) = nur Warnung.
+  gesperrt, 403 (Recht fehlt) = neutraler Hinweis.
+- Konfigurationsprüfung: `config` = Fehler (sperren oder machen unzuordenbar;
+  Banner, Ampel rot), `hints` = neutrale Hinweise (nur Verbindungstest und
+  Dolibarr-Ansicht).
 - Produkt `ZEITBUCH_DOLIBARR_PRODUCT_ID` bei **jedem** addtimespent und PUT
   mitgeben: PUT ohne `product_id` leert `fk_product`. Prüfung wie beim Benutzer
-  (`GET /products/{id}`, Recht „Produkte lesen“ auch für Dienstleistungen).
+  (`GET /products/{id}`, Recht „Produkte lesen“ auch für Leistungen).
+  In der UI heißt es „Produkt/Leistung“; der Variablenname bleibt.
   Abweichendes Produkt an eigener, nicht fakturierter Buchung = „update“.
 - Übertragen berechnet die Vorschau neu und vergleicht den Fingerprint; bei
   Abweichung 409 statt etwas anderes auszuführen als angezeigt.

@@ -40,7 +40,7 @@ class CheckState:
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.result = {"done": False, "youtrack": None, "dolibarr": None, "config": []}
+        self.result = {"done": False, "youtrack": None, "dolibarr": None, "config": [], "hints": []}
 
     def set(self, result):
         with self.lock:
@@ -63,7 +63,9 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
                                   "dolibarr": dolibarr, "check": check}
 
     def run_check():
-        result = {"youtrack": None, "dolibarr": None, "config": []}
+        # config: Fehler (sperren das Übertragen oder machen Zeiten unzuordenbar) → Banner, rot
+        # hints: neutrale Hinweise, z. B. „nicht prüfbar“ wegen fehlendem Leserecht
+        result = {"youtrack": None, "dolibarr": None, "config": [], "hints": []}
         for name, backend in (("youtrack", youtrack), ("dolibarr", dolibarr)):
             try:
                 result[name] = {"ok": True, "user": backend.ping()}
@@ -75,20 +77,20 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
                 youtrack, [p["short_name"] for p in mapping], cfg.yt)
         if result["dolibarr"]["ok"]:
             try:
-                login, msg, _ = check_booking_user(dolibarr, cfg.dolibarr_user_id)
+                login, msg, blocked = check_booking_user(dolibarr, cfg.dolibarr_user_id)
                 result["dolibarr"]["booking_user"] = login or (
                     result["dolibarr"]["user"] if not cfg.dolibarr_user_id else None)
                 if msg:
-                    result["config"].append(msg)
+                    result["config" if blocked else "hints"].append(msg)
             except BackendError as e:
                 result["config"].append(f"Dolibarr-Benutzer {cfg.dolibarr_user_id}: {e}")
             try:
-                product, msg, _ = check_booking_product(dolibarr, cfg.dolibarr_product_id)
+                product, msg, blocked = check_booking_product(dolibarr, cfg.dolibarr_product_id)
                 result["dolibarr"]["product"] = product_label(product)
                 if msg:
-                    result["config"].append(msg)
+                    result["config" if blocked else "hints"].append(msg)
             except BackendError as e:
-                result["config"].append(f"Dolibarr-Produkt {cfg.dolibarr_product_id}: {e}")
+                result["config"].append(f"Dolibarr-Produkt/Leistung {cfg.dolibarr_product_id}: {e}")
             for p in mapping:
                 if p["dolibarr_project_id"] is None:
                     continue
@@ -101,6 +103,8 @@ def create_app(cfg=None, youtrack=None, dolibarr=None, startup_check=False):
                     result["config"].append(f"Dolibarr-Projekt {p['dolibarr_project_id']}: {e}")
         for msg in result["config"]:
             log.warning("Konfigurationsprüfung: %s", msg)
+        for msg in result["hints"]:
+            log.info("Konfigurationsprüfung (Hinweis): %s", msg)
         check.set(result)
         return check.get()
 

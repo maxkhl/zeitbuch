@@ -97,7 +97,7 @@ class Config:
     dolibarr_key: str = ""
     # Dolibarr-Benutzer, auf den gebucht wird; 0 = API-Benutzer
     dolibarr_user_id: int = 0
-    # Produkt (Dienstleistung) für alle Buchungen; 0 = kein Produkt
+    # Produkt/Leistung für alle Buchungen; 0 = keins
     dolibarr_product_id: int = 0
     http_timeout: int = 20
     yt: FieldConfig = field(default_factory=FieldConfig)

@@ -115,7 +115,7 @@ Nachgeprüft für `ZEITBUCH_DOLIBARR_USER_ID`.
   Ändern nur neu bestimmt, wenn er leer ist oder `TIMESPENT_ALWAYS_UPDATE_THM`
   gesetzt ist.
 
-## Dolibarr 23.0.2: Produkt der Zeitbuchung
+## Dolibarr 23.0.2: Produkt/Leistung der Zeitbuchung
 
 Nachgeprüft für `ZEITBUCH_DOLIBARR_PRODUCT_ID`.
 
@@ -134,9 +134,9 @@ Nachgeprüft für `ZEITBUCH_DOLIBARR_PRODUCT_ID`.
   Vorschau Buchungen, deren Produkt von der Konfiguration abweicht.
 - **Prüfen, ob das Produkt existiert:** `GET /api/index.php/products/{id}`
   (404 = gibt es nicht). `api_products.class.php` (`_fetch`) verlangt das
-  Recht **Produkte: lesen** (`produit->lire`) – auch wenn das Produkt eine
-  **Dienstleistung** ist; das Recht „Dienstleistungen lesen“ allein reicht
-  nicht. Ohne Recht 403 → zeitbuch meldet „nicht prüfbar“ und bucht trotzdem.
+  Recht **„Produkte lesen“** (`produit->lire`) – auch wenn es eine **Leistung**
+  ist; „Leistungen einsehen“ allein reicht nicht. Ohne Recht 403 → zeitbuch
+  meldet den neutralen Hinweis „nicht prüfbar“ und bucht trotzdem.
 - **Keine Existenzprüfung beim Buchen:** Wie beim Benutzer prüft Dolibarr die
   Produkt-ID beim Anlegen nicht; zeitbuch sperrt das Übertragen, wenn sie nicht
   existiert.

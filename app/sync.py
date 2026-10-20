@@ -36,8 +36,8 @@ def _warn(text, url=None, level="warn"):
     return {"text": text, "url": url, "level": level}
 
 
-def check_reference(fetch, ref_id, var, what, right):
-    """Prüft eine konfigurierte Dolibarr-ID (Benutzer, Produkt).
+def check_reference(fetch, ref_id, var, what, right, right_note=""):
+    """Prüft eine konfigurierte Dolibarr-ID (Benutzer, Produkt/Leistung).
 
     → (Objekt oder None, Meldung oder None, blockiert). ref_id 0 = nicht konfiguriert.
     Fehlt das Leserecht (403), ist die ID nicht prüfbar – gebucht wird trotzdem;
@@ -50,7 +50,7 @@ def check_reference(fetch, ref_id, var, what, right):
     except BackendError as e:
         if e.status == 403:
             return None, (f"{what} {ref_id} ({var}) nicht prüfbar: dem API-Benutzer fehlt das "
-                          f"Recht „{right}“"), False
+                          f"Recht „{right}“{right_note} – gebucht wird trotzdem"), False
         raise
     if obj is None:
         return None, f"{what} {ref_id} ({var}) existiert nicht – es wird nichts gebucht", True
@@ -64,9 +64,10 @@ def check_booking_user(doli, user_id):
 
 
 def check_booking_product(doli, product_id):
-    """Recht „Produkte lesen“ ist auch für Dienstleistungen nötig (api_products prüft produit->lire)."""
+    """Recht „Produkte lesen“ ist auch für Leistungen nötig (api_products prüft produit->lire)."""
     return check_reference(doli.product, product_id, "ZEITBUCH_DOLIBARR_PRODUCT_ID",
-                           "Dolibarr-Produkt", "Produkte lesen")
+                           "Dolibarr-Produkt/Leistung", "Produkte lesen",
+                           " („Leistungen einsehen“ allein reicht nicht)")
 
 
 def product_label(product):
@@ -83,10 +84,10 @@ def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0, product
 
     booking_user, user_msg, user_blocked = check_booking_user(doli, user_id)
     if user_msg:
-        warnings.append(_warn(user_msg, level="error" if user_blocked else "warn"))
+        warnings.append(_warn(user_msg, level="error" if user_blocked else "info"))
     product, product_msg, product_blocked = check_booking_product(doli, product_id)
     if product_msg:
-        warnings.append(_warn(product_msg, level="error" if product_blocked else "warn"))
+        warnings.append(_warn(product_msg, level="error" if product_blocked else "info"))
     blocked = user_blocked or product_blocked
     want_product = product_id or None
 
@@ -243,12 +244,12 @@ def build_plan(month, result, issues, db, doli, yt, youtrack, user_id=0, product
             changes = [name for name, differs in (
                 ("Dauer", entry["seconds"] != seconds),
                 ("Notiz", entry["note"] != note),
-                ("Produkt", entry.get("product_id") != want_product)) if differs]
+                ("Produkt/Leistung", entry.get("product_id") != want_product)) if differs]
             item["changes"] = changes
             if entry["invoiced"]:
                 # Fakturiert: nie anfassen. Nur abweichende Dauer/Notiz sind eine Warnung wert;
                 # ein abweichendes Produkt bleibt, wie es fakturiert wurde.
-                content = [c for c in changes if c != "Produkt"]
+                content = [c for c in changes if c != "Produkt/Leistung"]
                 item["action"] = "locked_diff" if content else "locked"
                 if content:
                     warnings.append(_warn(
