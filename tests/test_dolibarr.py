@@ -6,12 +6,18 @@ from app.backends import BackendError
 from app.backends.dolibarr import Dolibarr
 
 
+NO_JSON = object()
+
+
 class FakeResponse:
-    def __init__(self, status, data):
+    def __init__(self, status, data, text=""):
         self.status_code = status
         self._data = data
+        self.text = text
 
     def json(self):
+        if self._data is NO_JSON:
+            raise ValueError("kein JSON")
         return self._data
 
 
@@ -182,3 +188,33 @@ def test_fehlermeldungen(doli, server):
 def test_kein_loeschen_im_backend():
     for cls in (Dolibarr, __import__("app.backends.dolibarr", fromlist=["MockDolibarr"]).MockDolibarr):
         assert not [m for m in dir(cls) if "delete" in m.lower() and not m.startswith("delete_by_hand")]
+
+
+PHP_FATAL = ("<br />\n<b>Fatal error</b>:  Uncaught TypeError: Illegal offset type in isset or empty "
+             "in /var/www/dolibarr/htdocs/includes/restler/framework/Luracast/Restler/Data/Validator.php:427"
+             "\nStack trace:\n#0 " + "x" * 500)
+
+
+def test_fehler_ohne_json_zeigt_antworttext(doli, server, caplog):
+    server.request = lambda *a, **k: FakeResponse(500, NO_JSON, PHP_FATAL)
+    with pytest.raises(BackendError) as e:
+        doli.add_time(7, "2026-09-01", 900, "x")
+    msg = str(e.value)
+    assert msg.startswith("Dolibarr-Fehler HTTP 500 bei GET /tasks/7/timespent: Fatal error:")
+    assert "Illegal offset type in isset or empty" in msg
+    assert "<b>" not in msg and msg.endswith("…")
+    assert len(msg) < 400
+    assert "Illegal offset type" in caplog.text
+
+
+def test_erfolg_ohne_json_zeigt_antworttext(doli, server):
+    server.request = lambda *a, **k: FakeResponse(200, NO_JSON, "<html><title>Login</title></html>")
+    with pytest.raises(BackendError, match="kein JSON bei GET /users/info – URL prüfen: Login"):
+        doli.ping()
+
+
+def test_403_mit_meldung(doli, server):
+    server.request = lambda *a, **k: FakeResponse(
+        403, {"error": {"code": 403, "message": "Access not allowed for login api"}})
+    with pytest.raises(BackendError, match="Rechte prüfen: Access not allowed for login api"):
+        doli.task(7)

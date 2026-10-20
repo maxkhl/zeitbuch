@@ -1,6 +1,10 @@
+import html
 import logging
+import re
 
 log = logging.getLogger(__name__)
+
+DETAIL_MAX = 300
 
 
 class BackendError(Exception):
@@ -9,6 +13,26 @@ class BackendError(Exception):
     def __init__(self, message, status=None):
         super().__init__(message)
         self.status = status
+
+
+def response_detail(r, json_message):
+    """Fehlertext einer HTTP-Antwort: Meldung aus dem JSON, sonst der gekürzte
+    Antworttext (z. B. ein PHP Fatal als HTML). Leer, wenn nichts da ist."""
+    try:
+        data = r.json()
+    except ValueError:
+        data = None
+    if data is not None:
+        try:
+            msg = json_message(data)
+        except (AttributeError, TypeError, KeyError):
+            msg = None
+        if msg:
+            return str(msg)
+    text = getattr(r, "text", "") or ""
+    text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", text)).split())
+    text = re.sub(r" ([:;,.])", r"\1", text)  # Rest der entfernten Tags, z. B. „<b>Fatal error</b>:“
+    return text[:DETAIL_MAX] + ("…" if len(text) > DETAIL_MAX else "")
 
 
 def create_youtrack(cfg):

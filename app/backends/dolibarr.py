@@ -12,7 +12,7 @@ import itertools
 import logging
 import threading
 
-from . import BackendError
+from . import BackendError, response_detail
 
 log = logging.getLogger(__name__)
 
@@ -66,21 +66,23 @@ class Dolibarr(DolibarrBase):
             raise BackendError(f"Dolibarr nicht erreichbar: {e.__class__.__name__}")
         if r.status_code == 404 and not_found_ok:
             return None
-        if r.status_code in (401, 403):
-            raise BackendError(f"Dolibarr verweigert den Zugriff (HTTP {r.status_code}) – "
-                               "API-Key und Rechte prüfen", r.status_code)
         if r.status_code >= 400:
-            detail = ""
-            try:
-                detail = (r.json().get("error") or {}).get("message") or ""
-            except (ValueError, AttributeError):
-                pass
-            raise BackendError(f"Dolibarr-Fehler HTTP {r.status_code} bei {method} {path}"
-                               + (f": {detail}" if detail else ""), r.status_code)
+            detail = response_detail(r, lambda d: (d.get("error") or {}).get("message"))
+            if r.status_code in (401, 403):
+                msg = f"Dolibarr verweigert den Zugriff (HTTP {r.status_code}) – API-Key und Rechte prüfen"
+            else:
+                msg = f"Dolibarr-Fehler HTTP {r.status_code} bei {method} {path}"
+            msg += f": {detail}" if detail else ""
+            log.warning("%s", msg)
+            raise BackendError(msg, r.status_code)
         try:
             return r.json()
         except ValueError:
-            raise BackendError(f"Dolibarr lieferte kein JSON bei {path} – URL prüfen")
+            detail = response_detail(r, lambda d: None)
+            msg = f"Dolibarr lieferte kein JSON bei {method} {path} – URL prüfen" + (
+                f": {detail}" if detail else "")
+            log.warning("%s", msg)
+            raise BackendError(msg)
 
     def ping(self):
         info = self._request("GET", "/users/info")

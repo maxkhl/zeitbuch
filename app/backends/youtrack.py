@@ -6,7 +6,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from ..model import Issue, WorkItem
-from . import BackendError
+from . import BackendError, response_detail
 
 log = logging.getLogger(__name__)
 
@@ -141,21 +141,23 @@ class YouTrack(YouTrackBase):
             r = self.session.get(self.url + path, params=params, timeout=self.timeout)
         except requests.RequestException as e:
             raise BackendError(f"YouTrack nicht erreichbar: {e.__class__.__name__}")
-        if r.status_code in (401, 403):
-            raise BackendError(f"YouTrack verweigert den Zugriff (HTTP {r.status_code}) – Token prüfen",
-                               r.status_code)
         if r.status_code >= 400:
-            detail = ""
-            try:
-                detail = r.json().get("error_description") or ""
-            except ValueError:
-                pass
-            raise BackendError(f"YouTrack-Fehler HTTP {r.status_code} bei {path}"
-                               + (f": {detail}" if detail else ""), r.status_code)
+            detail = response_detail(r, lambda d: d.get("error_description") or d.get("error"))
+            if r.status_code in (401, 403):
+                msg = f"YouTrack verweigert den Zugriff (HTTP {r.status_code}) – Token prüfen"
+            else:
+                msg = f"YouTrack-Fehler HTTP {r.status_code} bei {path}"
+            msg += f": {detail}" if detail else ""
+            log.warning("%s", msg)
+            raise BackendError(msg, r.status_code)
         try:
             return r.json()
         except ValueError:
-            raise BackendError(f"YouTrack lieferte kein JSON bei {path} – URL prüfen")
+            detail = response_detail(r, lambda d: None)
+            msg = f"YouTrack lieferte kein JSON bei {path} – URL prüfen" + (
+                f": {detail}" if detail else "")
+            log.warning("%s", msg)
+            raise BackendError(msg)
 
     def _paged(self, path, params):
         skip = 0

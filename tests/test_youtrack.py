@@ -115,11 +115,14 @@ def test_konfigurationspruefung_tippfehler(mock):
 # ------------------------------------------------------------ echte Implementierung, Fake-HTTP
 
 class FakeResponse:
-    def __init__(self, status, data):
+    def __init__(self, status, data, text=""):
         self.status_code = status
         self._data = data
+        self.text = text
 
     def json(self):
+        if self._data is None and self.text:
+            raise ValueError("kein JSON")
         return self._data
 
 
@@ -194,3 +197,9 @@ def test_load_gelöschtes_ticket_wird_nicht_zuordenbar(mock):
     assert issues["CON-30"].fields == {}
     r = evaluate(items, issues, YT)
     assert any(p.work_item.issue == "CON-30" for p in r.problems)
+
+
+def test_real_fehler_ohne_json_zeigt_antworttext():
+    yt = make_real(lambda url, params: FakeResponse(502, None, "<html><h1>502 Bad Gateway</h1></html>"))
+    with pytest.raises(BackendError, match="HTTP 502 bei /api/users/me: 502 Bad Gateway"):
+        yt.ping()
