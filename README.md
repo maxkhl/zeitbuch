@@ -117,15 +117,14 @@ gilt für alle eingerichteten YouTrack-Projekte.
 | `ZEITBUCH_YT_FIELD_BOOKABLE` | `Bebuchbar` | Feld Bebuchbar |
 | `ZEITBUCH_YT_FIELD_COORDINATION` | `Abstimmung` | Feld Abstimmungsposition |
 | `ZEITBUCH_YT_VALUE_YES` | `ja` | Enum-Wert für „ja“ in Bebuchbar/Abstimmung |
-| `ZEITBUCH_YT_WORK_IMPLEMENTATION` | `Umsetzung` | Arbeitstyp Umsetzung |
-| `ZEITBUCH_YT_WORK_MEETING` | `Besprechung` | Arbeitstyp Besprechung |
+| `ZEITBUCH_YT_WORK_MEETING` | `Besprechung` | Arbeitstyp Besprechung – einziger Typ mit Sonderregel (Umleitung auf die Abstimmungsposition). Alle anderen Arbeitstypen werden normal gebucht. |
 | `ZEITBUCH_YT_ATTR_BILLABLE` | `Abrechenbar` | Work-Item-Attribut für die Abrechenbarkeit |
 | `ZEITBUCH_YT_ATTR_BILLABLE_NO` | `nein` | Attributwert für „nicht abrechenbar“; leer oder anderer Wert = abrechenbar |
 | `ZEITBUCH_YT_AUTHORS` | leer | Kommagetrennte Logins, deren Work Items zählen; leer = alle |
 
 **Konfigurationsprüfung:** Beim Start und im Verbindungstest prüft zeitbuch je
-YouTrack-Projekt, ob alle Felder, Werte, Arbeitstypen und das Work-Item-Attribut
-samt Wert existieren, und meldet
+YouTrack-Projekt, ob alle Felder und Werte, der Arbeitstyp Besprechung und das
+Work-Item-Attribut samt Wert existieren, und meldet
 Lücken konkret (z. B. „Feld ‚Bebuchbar‘ fehlt in Projekt XSYS“). Die App startet
 trotzdem und zeigt die Meldungen als Banner oben an.
 
@@ -149,8 +148,9 @@ damit können fremde Seiten keine Formulare an zeitbuch schicken.
 
 Einmalig, von Hand (Konzept Abschnitt 10):
 
-1. Zeiterfassung im Auftraggeber-Projekt aktivieren, Arbeitstypen `Umsetzung`
-   und `Besprechung`; die Standardtypen deaktivieren. Work-Item-Attribut
+1. Zeiterfassung im Auftraggeber-Projekt aktivieren. Arbeitstyp `Besprechung`
+   muss existieren; alle weiteren Typen (Umsetzung, Testing, Dokumentation …)
+   sind frei wählbar und werden normal gebucht. Work-Item-Attribut
    `Abrechenbar` mit den Werten `ja` und `nein` anlegen und dem Projekt zuweisen.
 2. Im Feld **Type** die Werte `Abrechnungsprojekt` und `Abrechnungsposition`
    anlegen. Nutzt das Feld ein projektübergreifendes Bundle, erscheinen sie auch
@@ -239,14 +239,16 @@ Oben den Monat wählen. „Neu laden“ liest YouTrack erneut.
 
 ## Regeln in Kürze
 
-- Ziel einer **Umsetzung** ist der nächste Abrechnungsknoten (Position jeder
-  Ebene oder Projekt) in der Parent-Kette. Er muss `Bebuchbar = ja` haben; es
+- Ziel eines Work Items mit **beliebigem Arbeitstyp außer Besprechung** ist
+  der nächste Abrechnungsknoten (Position jeder Ebene oder Projekt) in der
+  Parent-Kette. Er muss `Bebuchbar = ja` haben; es
   wird nie auf einen höheren Knoten ausgewichen.
 - Ziel einer **Besprechung**: Hat das Abrechnungsprojekt genau eine
-  Abstimmungsposition (beliebige Tiefe), diese; hat es keine, wie Umsetzung.
+  Abstimmungsposition (beliebige Tiefe), diese; hat es keine, wie jeder andere
+  Arbeitstyp.
 - **Abrechenbar = nein** (Work-Item-Attribut) wird nur angezeigt – eigene
   Summe in der Übersicht, keine Zeitzeile, keine Buchung. Leer = abrechenbar.
-- Nie stillschweigend: Fehlender Arbeitstyp, kein Abrechnungsprojekt, nicht
+- Nie stillschweigend: Leerer Arbeitstyp, kein Abrechnungsprojekt, nicht
   bebuchbares Ziel, mehrere Abstimmungspositionen und fehlende Ext-Position bei
   gesetztem Ext-Projekt landen unter „Nicht zuordenbar“.
 - Zeilen je **Datum × Ziel**, Dauer = Tagessumme, **aufwärts auf 15 Minuten**.

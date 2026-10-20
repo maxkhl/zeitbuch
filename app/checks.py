@@ -46,9 +46,9 @@ def check_youtrack_config(youtrack, projects, yt):
         if not config["time_tracking"]:
             messages.append(f"Zeiterfassung ist in Projekt {project} nicht aktiviert")
         else:
-            for t in (yt.work_implementation, yt.work_meeting):
-                if t not in config["work_types"]:
-                    messages.append(f"Arbeitstyp „{t}“ fehlt in Projekt {project}")
+            # Nur der Besprechungstyp hat eine Sonderregel; andere Typen sind frei
+            if yt.work_meeting not in config["work_types"]:
+                messages.append(f"Arbeitstyp „{yt.work_meeting}“ fehlt in Projekt {project}")
             attrs = config.get("attributes") or {}
             if yt.attr_billable not in attrs:
                 messages.append(f"Work-Item-Attribut „{yt.attr_billable}“ fehlt in Projekt {project}")

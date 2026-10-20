@@ -32,6 +32,9 @@ UI, Doku und Fehlermeldungen sind auf Deutsch.
   auf höhere Knoten ausweichen. Abstimmung optional (0 = keine Umleitung).
   Nicht abrechenbar = Work-Item-Attribut (`ZEITBUCH_YT_ATTR_BILLABLE`), wird vor
   allen anderen Regeln aussortiert; es gibt keinen Arbeitstyp dafür.
+  Arbeitstypen sind dynamisch: Nur `ZEITBUCH_YT_WORK_MEETING` hat eine
+  Sonderregel, jeder andere nicht leere Typ wird normal gebucht, leer = nicht
+  zuordenbar. Keine Liste erlaubter Typen einführen.
   Reine Funktionen, keine I/O. Hier liegt die Fachlogik; Änderungen nur mit Test.
 - `app/month.py` – Monatsauswertung für die UI, übertragen-Zustand.
 - `app/sync.py` – Dolibarr-Vorschau und -Übertragung (Konzept 7).

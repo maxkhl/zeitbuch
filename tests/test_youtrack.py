@@ -203,3 +203,11 @@ def test_real_fehler_ohne_json_zeigt_antworttext():
     yt = make_real(lambda url, params: FakeResponse(502, None, "<html><h1>502 Bad Gateway</h1></html>"))
     with pytest.raises(BackendError, match="HTTP 502 bei /api/users/me: 502 Bad Gateway"):
         yt.ping()
+
+
+def test_konfigurationspruefung_nur_besprechungstyp(mock):
+    con = next(p for p in mock.raw_projects if p["shortName"] == "CON")
+    con["timeTrackingSettings"]["workItemTypes"] = [{"name": "Besprechung"}, {"name": "Testing"}]
+    assert check_youtrack_config(mock, ["CON"], YT) == []
+    con["timeTrackingSettings"]["workItemTypes"] = [{"name": "Umsetzung"}]
+    assert check_youtrack_config(mock, ["CON"], YT) == ["Arbeitstyp „Besprechung“ fehlt in Projekt CON"]

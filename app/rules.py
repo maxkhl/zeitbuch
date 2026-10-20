@@ -159,7 +159,7 @@ class Resolver:
             if coord:
                 node = coord[0]
                 redirected = True
-            # keine Abstimmungsposition: wie Umsetzung
+            # keine Abstimmungsposition: wie jeder andere Arbeitstyp
 
         # Nie auf den nächsthöheren Knoten ausweichen
         if not self.bookable(node):
@@ -194,7 +194,6 @@ def evaluate(work_items, issues, yt):
     parts = {}  # Zeilenschlüssel → Beschreibungsteile in Reihenfolge, dedupliziert
     problems = []
     nonbillable = []
-    known_types = (yt.work_implementation, yt.work_meeting)
 
     for wi in sorted(work_items, key=lambda w: (w.date, w.created, w.id)):
         if wi.minutes <= 0:
@@ -210,9 +209,6 @@ def evaluate(work_items, issues, yt):
             continue
         if not wi.work_type:
             problems.append(Problem(wi, summary, "Arbeitstyp fehlt"))
-            continue
-        if wi.work_type not in known_types:
-            problems.append(Problem(wi, summary, f"Unbekannter Arbeitstyp „{wi.work_type}“"))
             continue
         try:
             target, project, redirected = res.target(wi)

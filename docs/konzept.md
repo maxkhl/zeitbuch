@@ -2,7 +2,7 @@
 
 Stand: 20.10.2026 · Status: umgesetzt · Name der App/des Repos: `zeitbuch`
 
-Änderungen nach der ersten Umsetzung (20.10.2026): Bebuchbar an Projekt und Position, verschachtelte Positionen, Ziel ist immer der nächste Abrechnungsknoten, Abstimmung optional (3.1, 3.3, 5.1–5.3, 7.1); Dolibarr-Benutzer für Zeitbuchungen (7.2, 8, 12.3); Abrechenbarkeit als Work-Item-Attribut statt Arbeitstyp (3.4, 3.5, 5.1, 8.1, 9); Dolibarr-Produkt für alle Zeitbuchungen (7.2, 8, 12.3).
+Änderungen nach der ersten Umsetzung (20.10.2026): Bebuchbar an Projekt und Position, verschachtelte Positionen, Ziel ist immer der nächste Abrechnungsknoten, Abstimmung optional (3.1, 3.3, 5.1–5.3, 7.1); Dolibarr-Benutzer für Zeitbuchungen (7.2, 8, 12.3); Abrechenbarkeit als Work-Item-Attribut statt Arbeitstyp (3.4, 3.5, 5.1, 8.1, 9); Dolibarr-Produkt für alle Zeitbuchungen (7.2, 8, 12.3); Arbeitstypen dynamisch, nur Besprechung hat eine Sonderregel (3.4, 5.1, 5.2, 8.1).
 
 > Dieses Dokument liegt in einem **öffentlichen** Repository. Alle Beispiele (Kunden, Projektnummern, Positionen) sind fiktiv. Echte Kunden- und Projektdaten gehören nicht ins Repo – weder in Doku noch in Testdaten.
 
@@ -83,12 +83,13 @@ Der lesbare Positionsname für die Ausgabe ist der Ticket-Titel der Position –
 
 ### 3.4 Arbeitstypen (Work Item Types)
 
+Nur **ein** Arbeitstyp hat eine Sonderregel:
+
 | Typ | Bedeutung |
 |---|---|
-| Umsetzung | Entwicklung, Analyse, Test, Transport, Doku – alles „Doing“ |
-| Besprechung | Calls, Jour Fix, Abstimmungen, Anforderungsklärung im Gespräch |
+| Besprechung | Calls, Jour Fix, Abstimmungen, Anforderungsklärung im Gespräch – wird auf die Abstimmungsposition umgeleitet (5.1) |
 
-Die Standardtypen (Development/Testing/Documentation) im Projekt deaktivieren, damit nur diese beiden zur Auswahl stehen.
+Alle anderen im Projekt vorhandenen Arbeitstypen (z. B. Umsetzung, Testing, Dokumentation, künftige Typen) werden **normal gebucht** – auf den nächsten Abrechnungsknoten. Welche es gibt, legt das YouTrack-Projekt fest; zeitbuch braucht dafür keine Konfiguration. Ein leerer Arbeitstyp ist nicht zuordenbar (5.2).
 
 ### 3.5 Work-Item-Attribut „Abrechenbar“
 
@@ -100,11 +101,11 @@ Abrechenbarkeit ist damit unabhängig vom Arbeitstyp: Auch eine Besprechung kann
 
 ## 4. Erfassung im Alltag
 
-- **Umsetzung** an dem Ticket loggen, an dem gearbeitet wurde.
+- **Arbeit** (Umsetzung, Test, Doku …) an dem Ticket loggen, an dem gearbeitet wurde.
 - **Besprechung zu einem Thema** ebenfalls am Themen-Ticket loggen (Typ Besprechung) – keine eigenen Besprechungs-Tickets.
 - **Allgemeine Besprechung** (Jour Fix) direkt am Abrechnungsprojekt loggen. Hat das Projekt eine Abstimmungsposition, landet sie dort; sonst muss das Projekt bebuchbar sein.
 - Kommentar des Work Items = Beschreibungstext der Zeitzeile. Leer ist erlaubt (Fallback siehe 5.3).
-- Nicht abrechenbare Zeit mit dem Attribut **Abrechenbar = nein** loggen; der Arbeitstyp bleibt Umsetzung oder Besprechung.
+- Nicht abrechenbare Zeit mit dem Attribut **Abrechenbar = nein** loggen; der Arbeitstyp bleibt der übliche.
 
 ## 5. Zuordnungs- und Berechnungsregeln
 
@@ -120,8 +121,9 @@ Abrechenbarkeit ist damit unabhängig vom Arbeitstyp: Auch eine Besprechung kann
 
 | Arbeitstyp | Ziel |
 |---|---|
-| Umsetzung | der nächste Knoten aus Schritt 2 |
-| Besprechung | keine Abstimmungsposition → wie Umsetzung (nächster Knoten); genau eine → diese Abstimmungsposition, unabhängig davon, wo geloggt wurde; mehr als eine → nicht zuordenbar |
+| Besprechung | keine Abstimmungsposition → wie jeder andere Typ (nächster Knoten); genau eine → diese Abstimmungsposition, unabhängig davon, wo geloggt wurde; mehr als eine → nicht zuordenbar |
+| jeder andere Arbeitstyp | der nächste Knoten aus Schritt 2 |
+| leer | nicht zuordenbar (5.2) |
 
 6. Das Ziel muss **bebuchbar** sein (Bebuchbar = ja). Ist es das nicht, ist das Work Item nicht zuordenbar. Es wird **nie** stillschweigend auf den nächsthöheren Knoten ausgewichen.
 
@@ -132,12 +134,12 @@ Normale Tickets (weder Abrechnungsprojekt noch -position) sind nie selbst ein Zi
 Folgende Work Items erscheinen in der UI unter **„Nicht zuordenbar“** und gehen in keine Ausgabe, bis sie in YouTrack korrigiert sind:
 
 - Kein Abrechnungsprojekt in der Parent-Kette.
-- Arbeitstyp leer oder unbekannt. *(Bewusst kein Default auf „Umsetzung“: Eine vergessene Typangabe bei einer Besprechung würde sonst die falsche Position belasten.)*
+- Arbeitstyp leer. *(Bewusst kein Default: Eine vergessene Typangabe bei einer Besprechung würde sonst die falsche Position belasten.)* Jeder nicht leere Arbeitstyp außer Besprechung wird normal gebucht.
 - Ziel ist nicht bebuchbar (Bebuchbar = nein oder leer) – Projekt, Position oder Abstimmungsposition.
 - Besprechung, aber das Abrechnungsprojekt hat mehr als eine Abstimmungsposition.
 - Ziel ist eine Abrechnungsposition ohne Ext-Position, obwohl das Projekt ein Ext-Projekt hat.
 
-Ein Abrechnungsprojekt ohne Abstimmungsposition ist **kein** Fehler: Besprechungen werden dann wie Umsetzung gebucht.
+Ein Abrechnungsprojekt ohne Abstimmungsposition ist **kein** Fehler: Besprechungen werden dann wie jeder andere Arbeitstyp gebucht.
 
 ### 5.3 Aggregation zu Zeitzeilen
 
@@ -237,13 +239,12 @@ Feldnamen, Werte und Arbeitstypen sind **nicht im Code fest verdrahtet**, sonder
 | `ZEITBUCH_YT_FIELD_BOOKABLE` | `Bebuchbar` | Feld Bebuchbar |
 | `ZEITBUCH_YT_FIELD_COORDINATION` | `Abstimmung` | Feld Abstimmungsposition |
 | `ZEITBUCH_YT_VALUE_YES` | `ja` | Enum-Wert für „ja“ in Bebuchbar/Abstimmung |
-| `ZEITBUCH_YT_WORK_IMPLEMENTATION` | `Umsetzung` | Arbeitstyp Umsetzung |
-| `ZEITBUCH_YT_WORK_MEETING` | `Besprechung` | Arbeitstyp Besprechung |
+| `ZEITBUCH_YT_WORK_MEETING` | `Besprechung` | Arbeitstyp Besprechung – der einzige Typ mit Sonderregel; alle anderen werden normal gebucht |
 | `ZEITBUCH_YT_ATTR_BILLABLE` | `Abrechenbar` | Work-Item-Attribut für die Abrechenbarkeit |
 | `ZEITBUCH_YT_ATTR_BILLABLE_NO` | `nein` | Attributwert für „nicht abrechenbar“ |
 | `ZEITBUCH_YT_AUTHORS` | leer | Kommagetrennte Logins, deren Work Items zählen; leer = alle |
 
-**Konfigurationsprüfung** beim Start und im Verbindungstest: Für jedes gemappte YouTrack-Projekt prüft die App, ob alle Felder, Werte, Arbeitstypen sowie das Work-Item-Attribut mit seinem Wert existieren, und meldet Lücken konkret (z. B. „Feld ‚Bebuchbar‘ fehlt in Projekt XSYS“). Ein Tippfehler darf nicht stillschweigend dazu führen, dass alles unter „Nicht zuordenbar“ landet. Die App startet trotzdem und zeigt die Meldungen prominent an.
+**Konfigurationsprüfung** beim Start und im Verbindungstest: Für jedes gemappte YouTrack-Projekt prüft die App, ob alle Felder und Werte, der Arbeitstyp Besprechung sowie das Work-Item-Attribut mit seinem Wert existieren, und meldet Lücken konkret (z. B. „Feld ‚Bebuchbar‘ fehlt in Projekt XSYS“). Ein Tippfehler darf nicht stillschweigend dazu führen, dass alles unter „Nicht zuordenbar“ landet. Die App startet trotzdem und zeigt die Meldungen prominent an.
 
 ## 9. UI (Umfang MVP)
 
@@ -257,7 +258,7 @@ UI, Doku und Fehlermeldungen auf Deutsch. Kein Schreibzugriff auf YouTrack im MV
 
 ## 10. Einmalige Einrichtung in YouTrack (manuell, nicht Teil der App)
 
-1. Time Tracking im Auftraggeber-Projekt aktivieren (falls noch nicht), Arbeitstypen gemäß 3.4, Work-Item-Attribut gemäß 3.5.
+1. Time Tracking im Auftraggeber-Projekt aktivieren (falls noch nicht), Arbeitstyp Besprechung anlegen (weitere Typen nach Bedarf, 3.4), Work-Item-Attribut gemäß 3.5.
 2. Type-Werte `Abrechnungsprojekt`, `Abrechnungsposition` anlegen (Bundle-Hinweis 3.2).
 3. Felder Ext-Projekt, Bebuchbar, Ext-Position, Abstimmung anlegen, bedingt auf Type (Bebuchbar bei beiden Type-Werten sichtbar).
 4. Je Kundenprojekt ein Abrechnungsprojekt mit seinen Positionen (ggf. verschachtelt) als Subtasks anlegen. Bebuchbar an jedem Knoten setzen, auf den gebucht wird – leer gilt als nein. Optional genau eine Position mit Abstimmung = ja.
@@ -271,7 +272,8 @@ UI, Doku und Fehlermeldungen auf Deutsch. Kein Schreibzugriff auf YouTrack im MV
 | Rechnung | Entsteht in Dolibarr aus den Zeitbuchungen der Aufgaben; Dolibarr fasst beim Fakturieren alle Zeiten zu einer Position zusammen. |
 | Dolibarr-Mapping | Nur YouTrack-Projekt → Dolibarr-Projekt; die Aufgabenstruktur legt die App an. |
 | Bebuchbar | Steuert an Abrechnungsprojekt und -position, ob direkt dorthin gebucht werden darf. Kein Ausweichen auf den nächsthöheren Knoten. |
-| Abstimmung | Optional. Höchstens eine Abstimmungsposition je Abrechnungsprojekt; ohne sie werden Besprechungen wie Umsetzung gebucht. |
+| Abstimmung | Optional. Höchstens eine Abstimmungsposition je Abrechnungsprojekt; ohne sie werden Besprechungen wie jeder andere Arbeitstyp gebucht. |
+| Arbeitstypen | Dynamisch. Nur Besprechung hat eine Sonderregel; alle anderen vorhandenen Typen werden normal gebucht, leer ist nicht zuordenbar. |
 | Dolibarr-Benutzer | Zeiten werden auf `ZEITBUCH_DOLIBARR_USER_ID` gebucht; der API-Benutzer ist nur technischer Zugang. |
 | Dolibarr-Produkt | Eine Konstante `ZEITBUCH_DOLIBARR_PRODUCT_ID` für alle Buchungen. |
 | Positionen bei Direktkunden | Möglich, aber optional. Ohne Ext-Projekt keine Anzeige für externe Systeme, nur Dolibarr-Buchungen. |

@@ -32,7 +32,7 @@ class FieldConfig:
     field_bookable: str = "Bebuchbar"
     field_coordination: str = "Abstimmung"
     value_yes: str = "ja"
-    work_implementation: str = "Umsetzung"
+    # Einziger Arbeitstyp mit Sonderregel; alle anderen werden normal gebucht
     work_meeting: str = "Besprechung"
     # Work-Item-Attribut: Wert attr_billable_no = nicht abrechenbar, leer/sonst = abrechenbar
     attr_billable: str = "Abrechenbar"
@@ -49,7 +49,6 @@ class FieldConfig:
         "field_bookable": "ZEITBUCH_YT_FIELD_BOOKABLE",
         "field_coordination": "ZEITBUCH_YT_FIELD_COORDINATION",
         "value_yes": "ZEITBUCH_YT_VALUE_YES",
-        "work_implementation": "ZEITBUCH_YT_WORK_IMPLEMENTATION",
         "work_meeting": "ZEITBUCH_YT_WORK_MEETING",
         "attr_billable": "ZEITBUCH_YT_ATTR_BILLABLE",
         "attr_billable_no": "ZEITBUCH_YT_ATTR_BILLABLE_NO",

@@ -151,9 +151,10 @@ def test_nicht_abrechenbar_zaehlt_nicht_zur_tagessumme():
     assert row.raw_minutes == 10 and row.minutes == 15
 
 
-def test_alter_arbeitstyp_nicht_abrechenbar_ist_unbekannt():
-    assert reasons([wi("CON-10", 15, type="Nicht abrechenbar")]) == [
-        "Unbekannter Arbeitstyp „Nicht abrechenbar“"]
+def test_arbeitstyp_name_allein_macht_nicht_unabrechenbar():
+    # Nur das Attribut entscheidet über die Abrechenbarkeit, nicht der Name eines Arbeitstyps
+    (row,) = run([wi("CON-10", 15, type="Nicht abrechenbar")]).rows
+    assert row.target == "CON-2"
 
 
 def test_konfiguriertes_attribut():
@@ -241,8 +242,21 @@ def test_arbeitstyp_leer_kein_default():
     assert r.problems[0].reason == "Arbeitstyp fehlt"
 
 
-def test_unbekannter_arbeitstyp():
-    assert reasons([wi("CON-10", 15, type="Development")]) == ["Unbekannter Arbeitstyp „Development“"]
+@pytest.mark.parametrize("work_type", ["Umsetzung", "Testing", "Dokumentation", "Development"])
+def test_jeder_andere_arbeitstyp_wird_normal_gebucht(work_type):
+    r = run([wi("CON-10", 15, type=work_type), wi("CON-12", 15, type=work_type)])
+    assert r.problems == []
+    assert [row.target for row in r.rows] == ["CON-2", "CON-3"]  # keine Umleitung
+
+
+def test_arbeitstypen_gemischt_eine_zeile():
+    (row,) = run([wi("CON-10", 10, type="Umsetzung"), wi("CON-10", 10, type="Testing")]).rows
+    assert row.raw_minutes == 20 and row.minutes == 30
+
+
+def test_nur_besprechung_wird_umgeleitet():
+    r = run([wi("CON-10", 15, type="Testing"), wi("CON-10", 15, type="Besprechung")])
+    assert [row.target for row in r.rows] == ["CON-2", "CON-4"]
 
 
 def test_besprechung_ohne_abstimmungsposition_wie_umsetzung():
@@ -351,7 +365,7 @@ def test_besprechung_an_abstimmungsposition_selbst():
 
 def test_konfigurierte_feldnamen():
     yt = FieldConfig(field_type="Typ", type_project="AP", type_position="APos",
-                     field_bookable="Direkt", value_yes="Yes", work_implementation="Doing")
+                     field_bookable="Direkt", value_yes="Yes")
     issues = {
         "A-1": Issue("A-1", "Projekt", "A", None, {"Typ": "AP", "Direkt": "Yes"}),
         "A-2": Issue("A-2", "Task", "A", "A-1", {"Typ": "Bug"}),
